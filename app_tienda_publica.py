@@ -5,15 +5,15 @@ from urllib.parse import quote
 import os
 
 # --- CONFIGURACIÓN DE SEGURIDAD Y ACCESO ---
-CONTRASEÑA_ACCESO = "HechoEnMexico2026"  # <--- Asigna aquí la clave que le darás a tus compas de confianza
-NUMERO_VENTAS_WHATSAPP = "5215659113579"  # <--- Tu WhatsApp de ventas
-#URL_FASTAPI_PRODUCTOS = "http://127.0.0.1:8000/productos/"
-URL_FASTAPI_PRODUCTOS = "https://kinetik-on-line.onrender.com/productos/"
+CONTRASEÑA_ACCESO = "HechoEnMexico2026"  # Clave de acceso privado
+NUMERO_VENTAS_WHATSAPP = "5215659113579"  # Tu WhatsApp comercial de ventas
 
+# URL oficial de la Ferrari en la nube (Render)
+URL_FASTAPI_PRODUCTOS = "https://kinetik-on-line.onrender.com/productos/"
 
 st.set_page_config(page_title="Hecho en México - KINETIK Tienda Oficial", page_icon="🇲🇽", layout="wide")
 
-# Estilos CSS comerciales
+# Estilos CSS comerciales de alta gama
 st.markdown("""
     <style>
     .card-precio {
@@ -83,7 +83,7 @@ try:
             with col_f2:
                 buscar = st.text_input("🔍 Buscar prenda, color o código", placeholder="Ej: LEGGIN, TRIX, NEGRO...")
 
-            # Aplicar Filtros
+            # Aplicar Filtros comerciales
             df_filtrado = df.copy()
             if sel_depto != "TODOS":
                 df_filtrado = df_filtrado[df_filtrado['departamento'] == sel_depto]
@@ -113,24 +113,26 @@ try:
 
                 with cols[idx % 3]:
                     with st.container(border=True):
-                        # --- CARGA DINÁMICA DE GALERÍA DE IMÁGENES ---
+                        # --- CARGA DINÁMICA DE GALERÍA DE IMÁGENES (MULTICLOUD ABSOLUTE URLs) ---
                         if lista_imagenes:
                             if len(lista_imagenes) > 1:
                                 nombres_pestanas = [f"Foto {i+1}" for i in range(len(lista_imagenes))]
                                 tabs_fotos = st.tabs(nombres_pestanas)
                                 for t_idx, tab_obj in enumerate(tabs_fotos):
                                     with tab_obj:
-                                        img_path = lista_imagenes[t_idx]
-                                        if os.path.exists(str(img_path)):
-                                            st.image(img_path, use_container_width=True)
+                                        img_path = str(lista_imagenes[t_idx])
+                                        if img_path and not img_path.startswith("http"):
+                                            img_url = f"https://kinetik-on-line.onrender.com/{img_path.lstrip('/')}"
                                         else:
-                                            st.image("https://via.placeholder.com/400x300.png?text=Hecho+en+M%C3%A9xico", use_container_width=True)
+                                            img_url = img_path
+                                        st.image(img_url, use_container_width=True)
                             else:
-                                img_path = lista_imagenes[0]
-                                if os.path.exists(str(img_path)):
-                                    st.image(img_path, use_container_width=True)
+                                img_path = str(lista_imagenes[0])
+                                if img_path and not img_path.startswith("http"):
+                                    img_url = f"https://kinetik-on-line.onrender.com/{img_path.lstrip('/')}"
                                 else:
-                                    st.image("https://via.placeholder.com/400x300.png?text=Hecho+en+M%C3%A9xico", use_container_width=True)
+                                    img_url = img_path
+                                st.image(img_url, use_container_width=True)
                         else:
                             st.image("https://via.placeholder.com/400x300.png?text=Hecho+en+M%C3%A9xico", use_container_width=True)
                         
