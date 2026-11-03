@@ -1,0 +1,103 @@
+🛠️ Paso 1: Actualizar ai_helper.py con una API Externa (Groq / OpenAI Compatible)
+Para no alterar nada de la lógica en main.py, dejamos la misma firma de función generar_storytelling_mexicano. Usaremos el endpoint compatible con OpenAI o la API gratuita de Groq (requiere tu variable de entorno o API key gratuita):   
+main.py
++ 1
+
+Python
+import os
+import requests
+
+# Puedes obtener una API Key gratuita en https://console.groq.com/
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "tu_api_key_aqui")
+
+def generar_storytelling_mexicano(nombre_producto, descripcion_corta, estado_origen):
+    prompt = f"""
+    Eres un experto en marketing internacional y cultura mexicana. 
+    Producto: {nombre_producto}
+    Origen: {estado_origen}
+    Descripción: {descripcion_corta}
+
+    Genera dos historias cautivadoras para el producto.
+    
+    ESTRUCTURA REQUERIDA:
+    [ESPAÑOL]
+    Crea una descripción emocional y profesional de 2 párrafos que resalte 
+    la calidad de lo 'Hecho en México' y la tradición de {estado_origen}.
+    
+    [ENGLISH]
+    (Translate the same story into professional, high-end marketing English)
+    
+    REGLAS:
+    - No uses más de 4 párrafos en total.
+    - Mantén el tono artesanal y premium.
+    """
+    
+    # Endpoint público y ultra-rápido de Groq para Llama 3
+    url = "https://api.groq.com/openai/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": "llama-3.3-70b-versatile",
+        "messages": [
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.7
+    }
+    
+    try:
+        response = requests.post(url, json=payload, headers=headers, timeout=10)
+        if response.status_code == 200:
+            return response.json()['choices'][0]['message']['content']
+        else:
+            return f"Hecho en México: {nombre_producto} de alta calidad. (IA offline temporalmente)."
+    except Exception as e:
+        return f"Prenda artesanal mexicana premium. ({nombre_producto})"
+📦 Paso 2: Crear el archivo requirements.txt
+Para que el servidor en la nube sepa qué librerías instalar automáticamente, crea este archivo en la raíz del proyecto:
+
+Plaintext
+fastapi
+uvicorn
+sqlalchemy
+pydantic
+streamlit
+pandas
+requests
+python-multipart
+🌐 Paso 3: Despliegue Paso a Paso
+Subir a GitHub:
+Crea un repositorio (público o privado) en tu cuenta de GitHub y sube todos tus archivos oficiales (main.py, models.py, database.py, ai_helper.py, app_frontend.py, requirements.txt).   
+ai_helper.py
++ 4
+
+Desplegar el Backend (FastAPI en Render.com):
+
+Ve a Render.com y crea un Web Service gratis conectado a tu repositorio de GitHub.
+
+Build Command: pip install -r requirements.txt
+
+Start Command: uvicorn main:app --host 0.0.0.0 --port $PORT
+
+Al terminar, Render te dará una URL pública (ejemplo: https://hecho-en-mexico-api.onrender.com).
+
+Desplegar el Frontend (Streamlit Cloud):
+
+En app_frontend.py, cambia la URL local http://127.0.0.1:8000/ por la URL pública que te dio Render (https://hecho-en-mexico-api.onrender.com/).   
+app_frontend.py
+
+Ve a share.streamlit.io, conecta tu cuenta de GitHub y selecciona el archivo app_frontend.py.   
+app_frontend.py
+
+¡Y listo, carnal! En cuestión de minutos tendrás tu app pública de Streamlit respondiendo a cualquier cliente o socio con el token ulises_pro_2026 y con la IA generando historias al tiro desde la nube.   
+app_frontend.py
++ 3
+
+¿Cómo la ves, compa? ¿Te late conseguir la API Key de Groq o te preparo el ajuste para Hugging Face? ¡Puro pa' delante con esa Ferrari! 🏎️🇲🇽🚀
+
+
+
+Groq
+ferrari-kinetik-on-line
+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
