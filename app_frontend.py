@@ -9,11 +9,12 @@ from PIL import Image, ImageDraw, ImageFont
 import os
 from voice_to_text import transcribir_audio_bytes
 
-# --- CONFIGURACIÓN Y SEGURIDAD ---
+# --- CONFIGURACIÓN Y SEGURIDAD PRODUCCIÓN (RENDER) ---
 API_TOKEN = "ulises_pro_2026"
 HEADERS = {"x-token": API_TOKEN}
-URL_FASTAPI_CREAR = "http://127.0.0.1:8000/crear-producto/"
-URL_FASTAPI_LISTAR = "http://127.0.0.1:8000/productos/"
+BASE_URL_RENDER = "https://kinetik-on-line.onrender.com"
+URL_FASTAPI_CREAR = f"{BASE_URL_RENDER}/crear-producto/"
+URL_FASTAPI_LISTAR = f"{BASE_URL_RENDER}/productos/"
 
 DIR_IMAGENES = os.path.join("static", "imagenes")
 os.makedirs(DIR_IMAGENES, exist_ok=True)
@@ -109,7 +110,7 @@ def generar_imagen_barcode_memoria(codigo_barras_str: str, precio_venta: float =
     return buffer_out
 
 st.set_page_config(page_title="Hecho en México - Admin 2026", page_icon="🇲🇽", layout="wide")
-st.title("KINETIK Hecho en México - Panel de Control (Galería Múltiple)")
+st.title("KINETIK Hecho en México - Panel de Control (Galería Múltiple Cloud)")
 
 tab1, tab2, tab3, tab4 = st.tabs([
     "🥇️ KINETIK - Quienes somos", 
@@ -120,7 +121,6 @@ tab1, tab2, tab3, tab4 = st.tabs([
 
 with tab1:
     st.subheader(" Creamos ropa deportiva para personas que buscan comodidad en su día a día, con telas, costuras y diseños de calidad. Diseñada para sentirte cómodo y seguro realizando cualquier actividad; para sentirte libre de impulsar tus movimientos, generando una mejor versión de ti mismo. ")
-    
 
 with tab2:
     st.subheader("📝 Captura Directa de Inventario con Galería Múltiple")
@@ -159,7 +159,6 @@ with tab2:
             inv_min = st.number_input("Inventario Mínimo", min_value=0, value=5)
             inv_max = st.number_input("Inventario Máximo", min_value=0, value=50)
             
-            # --- CARGA MÚLTIPLE DE IMÁGENES ---
             fotos_subidas = st.file_uploader("📷 Subir Galería de Fotos (Múltiples JPG / PNG)", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
 
         col_sku_disp, col_bar_disp, col_img_disp = st.columns([1, 1, 1])
@@ -272,7 +271,6 @@ with tab3:
             if datos:
                 df = pd.DataFrame(datos)
                 
-                # --- BUSCADOR INTELIGENTE POR CÓDIGO O DESCRIPCIÓN ---
                 st.markdown("### 🔍 Buscador Inteligente de Prendas")
                 c_busq1, c_busq2 = st.columns([2, 1])
                 with c_busq1:
@@ -339,7 +337,6 @@ with tab3:
     except Exception as e:
         st.error(f"Error al conectar con el API: {e}")
 
-# --- PESTAÑA 4: GESTIÓN Y ACTUALIZACIÓN DE FOTOS POR SKU ---
 with tab4:
     st.subheader("🖼️ Galería Visual y Edición Fotográfica por SKU")
     st.markdown("Utiliza este módulo para consultar las imágenes actuales de cualquier prenda o añadir/reemplazar fotos.")
@@ -369,7 +366,6 @@ with tab4:
                     st.divider()
                     st.markdown("##### 📤 Cargar Nuevas Imágenes")
                     
-                    # --- OPCIÓN DE AGREGAR VS REEMPLAZAR ---
                     modo_actualizacion = st.radio(
                         "Acción a realizar con las fotos:",
                         options=["Agregar a la galería existente", "Reemplazar toda la galería"],
@@ -405,7 +401,7 @@ with tab4:
                                 "modo": modo_api
                             }
                             
-                            url_up = f"http://127.0.0.1:8000/actualizar-fotos/{sku_a_editar}"
+                            url_up = f"{BASE_URL_RENDER}/actualizar-fotos/{sku_a_editar}"
                             r_up = requests.put(url_up, json=payload_update, headers=HEADERS)
                             
                             if r_up.status_code == 200:
