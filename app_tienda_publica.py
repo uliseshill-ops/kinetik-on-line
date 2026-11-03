@@ -113,26 +113,40 @@ try:
 
                 with cols[idx % 3]:
                     with st.container(border=True):
-                        # --- CARGA DINÁMICA DE GALERÍA DE IMÁGENES (MULTICLOUD ABSOLUTE URLs) ---
+                        # --- CARGA DINÁMICA DE GALERÍA DE IMÁGENES (BLINDADA CONTRA ARCHIVOS HUÉRFANOS) ---
                         if lista_imagenes:
                             if len(lista_imagenes) > 1:
                                 nombres_pestanas = [f"Foto {i+1}" for i in range(len(lista_imagenes))]
                                 tabs_fotos = st.tabs(nombres_pestanas)
                                 for t_idx, tab_obj in enumerate(tabs_fotos):
                                     with tab_obj:
-                                        img_path = str(lista_imagenes[t_idx])
-                                        if img_path and not img_path.startswith("http"):
-                                            img_url = f"https://kinetik-on-line.onrender.com/{img_path.lstrip('/')}"
+                                        img_path = str(lista_imagenes[t_idx]).strip()
+                                        if img_path and img_path != "nan" and img_path != "None":
+                                            if not img_path.startswith("http"):
+                                                img_url = f"https://kinetik-on-line.onrender.com/{img_path.lstrip('/')}"
+                                            else:
+                                                img_url = img_path
+                                            
+                                            try:
+                                                st.image(img_url, use_container_width=True)
+                                            except Exception:
+                                                st.image("https://via.placeholder.com/400x300.png?text=Hecho+en+M%C3%A9xico", use_container_width=True)
                                         else:
-                                            img_url = img_path
-                                        st.image(img_url, use_container_width=True)
+                                            st.image("https://via.placeholder.com/400x300.png?text=Hecho+en+M%C3%A9xico", use_container_width=True)
                             else:
-                                img_path = str(lista_imagenes[0])
-                                if img_path and not img_path.startswith("http"):
-                                    img_url = f"https://kinetik-on-line.onrender.com/{img_path.lstrip('/')}"
+                                img_path = str(lista_imagenes[0]).strip()
+                                if img_path and img_path != "nan" and img_path != "None":
+                                    if not img_path.startswith("http"):
+                                        img_url = f"https://kinetik-on-line.onrender.com/{img_path.lstrip('/')}"
+                                    else:
+                                        img_url = img_path
+                                    
+                                    try:
+                                        st.image(img_url, use_container_width=True)
+                                    except Exception:
+                                        st.image("https://via.placeholder.com/400x300.png?text=Hecho+en+M%C3%A9xico", use_container_width=True)
                                 else:
-                                    img_url = img_path
-                                st.image(img_url, use_container_width=True)
+                                    st.image("https://via.placeholder.com/400x300.png?text=Hecho+en+M%C3%A9xico", use_container_width=True)
                         else:
                             st.image("https://via.placeholder.com/400x300.png?text=Hecho+en+M%C3%A9xico", use_container_width=True)
                         
