@@ -115,6 +115,7 @@ try:
                     with st.container(border=True):
                         # --- CARGA DINÁMICA DE GALERÍA DE IMÁGENES (BLINDADA CONTRA ARCHIVOS HUÉRFANOS) ---
                         # --- CARGA DINÁMICA DE GALERÍA DE IMÁGENES (LIMPIEZA DE BARRAS WINDOWS/WEB) ---
+                        # --- CARGA DINÁMICA DE GALERÍA DE IMÁGENES (BLINDADA AL 100%) ---
                         if lista_imagenes:
                             if len(lista_imagenes) > 1:
                                 nombres_pestanas = [f"Foto {i+1}" for i in range(len(lista_imagenes))]
@@ -123,7 +124,7 @@ try:
                                     with tab_obj:
                                         img_path = str(lista_imagenes[t_idx]).strip()
                                         if img_path and img_path != "nan" and img_path != "None":
-                                            # Normalizamos barras invertidas de Windows a formato web
+                                            # Limpiamos diagonales de Windows y armamos URL absoluta en Render
                                             img_path_clean = img_path.replace("\\", "/")
                                             if not img_path_clean.startswith("http"):
                                                 img_url = f"https://kinetik-on-line.onrender.com/{img_path_clean.lstrip('/')}"
