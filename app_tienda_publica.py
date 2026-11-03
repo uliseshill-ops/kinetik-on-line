@@ -9,7 +9,6 @@ CONTRASEÑA_ACCESO = "HechoEnMexico2026"  # <--- Asigna aquí la clave que le da
 NUMERO_VENTAS_WHATSAPP = "5215659113579"  # <--- Tu WhatsApp de ventas
 #URL_FASTAPI_PRODUCTOS = "http://127.0.0.1:8000/productos/"
 URL_FASTAPI_PRODUCTOS = "https://kinetik-on-line.onrender.com/productos/"
-```[cite: 7]
 
 
 st.set_page_config(page_title="Hecho en México - KINETIK Tienda Oficial", page_icon="🇲🇽", layout="wide")
