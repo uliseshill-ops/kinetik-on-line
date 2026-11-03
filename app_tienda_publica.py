@@ -114,6 +114,7 @@ try:
                 with cols[idx % 3]:
                     with st.container(border=True):
                         # --- CARGA DINÁMICA DE GALERÍA DE IMÁGENES (BLINDADA CONTRA ARCHIVOS HUÉRFANOS) ---
+                        # --- CARGA DINÁMICA DE GALERÍA DE IMÁGENES (LIMPIEZA DE BARRAS WINDOWS/WEB) ---
                         if lista_imagenes:
                             if len(lista_imagenes) > 1:
                                 nombres_pestanas = [f"Foto {i+1}" for i in range(len(lista_imagenes))]
@@ -122,10 +123,12 @@ try:
                                     with tab_obj:
                                         img_path = str(lista_imagenes[t_idx]).strip()
                                         if img_path and img_path != "nan" and img_path != "None":
-                                            if not img_path.startswith("http"):
-                                                img_url = f"https://kinetik-on-line.onrender.com/{img_path.lstrip('/')}"
+                                            # Normalizamos barras invertidas de Windows a formato web
+                                            img_path_clean = img_path.replace("\\", "/")
+                                            if not img_path_clean.startswith("http"):
+                                                img_url = f"https://kinetik-on-line.onrender.com/{img_path_clean.lstrip('/')}"
                                             else:
-                                                img_url = img_path
+                                                img_url = img_path_clean
                                             
                                             try:
                                                 st.image(img_url, use_container_width=True)
@@ -136,10 +139,11 @@ try:
                             else:
                                 img_path = str(lista_imagenes[0]).strip()
                                 if img_path and img_path != "nan" and img_path != "None":
-                                    if not img_path.startswith("http"):
-                                        img_url = f"https://kinetik-on-line.onrender.com/{img_path.lstrip('/')}"
+                                    img_path_clean = img_path.replace("\\", "/")
+                                    if not img_path_clean.startswith("http"):
+                                        img_url = f"https://kinetik-on-line.onrender.com/{img_path_clean.lstrip('/')}"
                                     else:
-                                        img_url = img_path
+                                        img_url = img_path_clean
                                     
                                     try:
                                         st.image(img_url, use_container_width=True)
