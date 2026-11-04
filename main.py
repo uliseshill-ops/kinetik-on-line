@@ -147,19 +147,3 @@ def obtener_productos(db: Session = Depends(get_db)):
         return resultado
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al consultar la base de datos: {str(e)}")
-
-
----
-
-### 🚀 ¿Qué logramos con esta actualización, compa?
-
-1. **Ruta `/actualizar-fotos/{codigo}` habilitada al 100%:** Ya responde correctamente a las peticiones del frontend para cuando quieras modificar o agregar fotos a un SKU existente[cite: 8].
-2. **Serialización Perfecta en `/productos/`:** Garantiza que tanto la tienda pública (`app_tienda_publica.py`)[cite: 8] como el panel de administración reciban la lista completa de imágenes y la descripción generada por IA sin excepciones.
-3. **Blindaje de Seguridad:** Mantiene la llave maestra `x-token: ulises_pro_2026` para que ningún intruso pueda alterar el inventario de la Ferrari[cite: 8, 10].
-
----
-
-<ElicitationsGroup message="Compa, ya quedó armado el main.py de categoría mundial. Dime cuál es el siguiente paso que ejecutamos:">
-  <Elicitation label="Hacer git push del nuevo main.py" query="Compa, voy a guardar el main.py actualizado y hacer el git push a Render para probarlo de inmediato."/>
-  <Elicitation label="Probar alta y galería en Streamlit" query="Quiero dar de alta una prenda de prueba desde la interfaz web para verificar que la galería y el storytelling fluyan al cien."/>
-</ElicitationsGroup>
