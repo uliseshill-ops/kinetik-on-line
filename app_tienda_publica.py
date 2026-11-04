@@ -9,7 +9,7 @@ import os
 CONTRASEÑA_ACCESO = "HechoEnMexico2026"  # Clave de acceso privado
 NUMERO_VENTAS_WHATSAPP = "5215659113579"  # Tu WhatsApp comercial de ventas
 
-URL oficial de la Ferrari en la nube (Render)
+#URL oficial de la Ferrari en la nube (Render)
 
 URL_FASTAPI_BASE = "https://kinetik-on-line.onrender.com"
 URL_FASTAPI_PRODUCTOS = f"{URL_FASTAPI_BASE}/productos/"
