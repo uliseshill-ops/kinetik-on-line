@@ -4,7 +4,7 @@ import pandas as pd
 from urllib.parse import quote
 import os
 
---- CONFIGURACIÓN DE SEGURIDAD Y ACCESO ---
+#--- CONFIGURACIÓN DE SEGURIDAD Y ACCESO ---
 
 CONTRASEÑA_ACCESO = "HechoEnMexico2026"  # Clave de acceso privado
 NUMERO_VENTAS_WHATSAPP = "5215659113579"  # Tu WhatsApp comercial de ventas
@@ -16,7 +16,7 @@ URL_FASTAPI_PRODUCTOS = f"{URL_FASTAPI_BASE}/productos/"
 
 st.set_page_config(page_title="Hecho en México - KINETIK Tienda Oficial", page_icon="🇲🇽", layout="wide")
 
-Estilos CSS comerciales de alta gama
+#Estilos CSS comerciales de alta gama
 
 st.markdown("""
 
@@ -36,7 +36,7 @@ color: #333333;
 
 """, unsafe_allow_html=True)
 
---- MÓDULO DE AUTENTICACIÓN / CANDADO DE SEGURIDAD ---
+#--- MÓDULO DE AUTENTICACIÓN / CANDADO DE SEGURIDAD ---
 
 def verificar_contraseña():
 if "autenticado" not in st.session_state:
@@ -61,12 +61,12 @@ if not st.session_state["autenticado"]:
 return True
 
 
-Validar clave antes de ejecutar cualquier consulta o cargar la interfaz
+#Validar clave antes de ejecutar cualquier consulta o cargar la interfaz
 
 if not verificar_contraseña():
 st.stop()
 
---- FUNCIÓN AUXILIAR PARA ARMAR Y VALIDAR URLS DE IMÁGENES ---
+#--- FUNCIÓN AUXILIAR PARA ARMAR Y VALIDAR URLS DE IMÁGENES ---
 
 def construir_url_imagen(ruta_raw):
 """Convierte rutas locales o relativas en URLs absolutas servidas por Render."""
@@ -83,7 +83,7 @@ ruta_limpia = img_path.lstrip("/")
 return f"{URL_FASTAPI_BASE}/{ruta_limpia}"
 
 
---- INTERFAZ COMERCIAL DE LA TIENDA PÚBLICA ---
+#--- INTERFAZ COMERCIAL DE LA TIENDA PÚBLICA ---
 
 st.title("KINETIK Hecho en México - Colección Oficial")
 st.markdown("#### Ropa y moda textil de alta resistencia. ¡Calidad 100% Mexicana!")
