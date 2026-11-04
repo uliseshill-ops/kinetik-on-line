@@ -147,7 +147,7 @@ def obtener_productos(db: Session = Depends(get_db)):
         return resultado
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al consultar la base de datos: {str(e)}")
-```[cite: 8, 14]
+
 
 ---
 
