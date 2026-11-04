@@ -40,7 +40,7 @@ color: #333333;
 
 def verificar_contraseña():
 if "autenticado" not in st.session_state:
-st.session_state["autenticado"] = False
+    st.session_state["autenticado"] = False
 
 if not st.session_state["autenticado"]:
     col_pad1, col_form, col_pad2 = st.columns([1, 2, 1])
@@ -64,14 +64,14 @@ return True
 #Validar clave antes de ejecutar cualquier consulta o cargar la interfaz
 
 if not verificar_contraseña():
-st.stop()
+    st.stop()
 
 #--- FUNCIÓN AUXILIAR PARA ARMAR Y VALIDAR URLS DE IMÁGENES ---
 
 def construir_url_imagen(ruta_raw):
 """Convierte rutas locales o relativas en URLs absolutas servidas por Render."""
 if not ruta_raw or str(ruta_raw).strip() in ["nan", "None", ""]:
-return "https://via.placeholder.com/400x300.png?text=Hecho+en+M%C3%A9xico"
+    return "https://via.placeholder.com/400x300.png?text=Hecho+en+M%C3%A9xico"
 
 img_path = str(ruta_raw).strip().replace("\\", "/")
 
@@ -90,12 +90,12 @@ st.markdown("#### Ropa y moda textil de alta resistencia. ¡Calidad 100% Mexican
 st.divider()
 
 if "likes" not in st.session_state:
-st.session_state.likes = {}
+    st.session_state.likes = {}
 
 try:
 res = requests.get(URL_FASTAPI_PRODUCTOS)
 if res.status_code == 200:
-productos = res.json()
+    productos = res.json()
 
     if productos:
         df = pd.DataFrame(productos)
