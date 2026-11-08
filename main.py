@@ -163,14 +163,3 @@ def obtener_productos(db: Session = Depends(get_db)):
         return resultado
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al consultar la base de datos: {str(e)}")
-```[cite: 9]
-
----
-
-### 🔧 ¿Qué mejoras trae este `main.py` para tu Ferrari?
-1. **Seguridad Dinámica:** Ya lee la variable de entorno `API_SECRET_KEY` de Render (con respaldo en `"ulises_pro_2026"`)[cite: 9], manteniendo la seguridad intacta.
-2. **Robustez con el CSV de Imágenes:** En el esquema Pydantic y en la ruta de creación agregué un validador inteligente (`Union[str, List[str]]`) y un conversor con `ast.literal_eval`. Esto evita que si tu archivo CSV de inventario le pasa las rutas de las fotos como un texto plano con corchetes (ej: `['static/imagenes/...']`), la API lo interprete sin marcar error y lo guarde ordenado en la base de datos.
-3. **Filtro de Nulos:** Evita que se guarden rutas vacías, `nan` o `None` en la galería fotográfica de la tienda.
-
-### 🚀 Siguiente paso, carnal:
-Guarda este archivo en tu carpeta de trabajo, hazle su respectivo `git add main.py`, `git commit` y `git push origin main` para que Render actualice el servidor en la nube. ¡Me avisas en cuanto quede arriba para ver a la tienda pública luciendo todas sus fotos al 100%! 🔥
