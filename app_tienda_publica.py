@@ -198,11 +198,3 @@ try:
         st.error(f"Error al conectar con el servidor backend: Status {res.status_code}")
 except Exception as e:
     st.error(f"No se pudo cargar la tienda online: {e}")
-
-
-### 🚀 ¿Cómo la probamos de volada, carnal?
-
-1. Guarda el código arriba como `app_tienda_publica.py`[cite: 11].
-2. Ejecuta en tu terminal:
-   ```powershell
-   streamlit run app_tienda_publica.py
