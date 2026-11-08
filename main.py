@@ -3,16 +3,18 @@ from sqlalchemy.orm import Session
 import models
 from database import SessionLocal, engine
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Union
 from ai_helper import generar_storytelling_mexicano
 from fastapi.staticfiles import StaticFiles
 import os
 
-# Inicialización de la Base de Datos SQLite
+# Inicialización de la Base de Datos (compatible con Supabase/PostgreSQL y SQLite)
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Hecho en México API - E-commerce Engine")
-API_SECRET_KEY = "ulises_pro_2026"
+
+# SEGURIDAD PRO: Lee la variable de entorno de Render, con respaldo local
+API_SECRET_KEY = os.getenv("API_SECRET_KEY", "ulises_pro_2026")
 
 # Montamos la carpeta estática para servir las fotos localmente o en respaldo
 os.makedirs("static/imagenes", exist_ok=True)
@@ -35,7 +37,7 @@ class ProductoSchema(BaseModel):
     color: str
     existencia: int
     imagen_url: Optional[str] = None  
-    imagenes: Optional[List[str]] = [] # <--- Soporte para galería múltiple
+    imagenes: Optional[Union[str, List[str]]] = [] # <--- Acepta lista o string plano desde CSV
     precio_mayoreo: Optional[float] = 0.0
     departamento: Optional[str] = "GENERAL"
     inventario_minimo: Optional[int] = 0
@@ -75,14 +77,28 @@ def crear_producto(producto: ProductoSchema, db: Session = Depends(get_db), x_to
     
     db.add(nuevo_producto)
     
-    # Persistencia de la galería fotográfica múltiple
-    urls_a_guardar = producto.imagenes or []
+    # Normalización inteligente de imágenes (por si vienen como string de lista del CSV o como lista real)
+    urls_a_guardar = []
+    if isinstance(producto.imagenes, str):
+        try:
+            import ast
+            parsed = ast.literal_eval(producto.imagenes)
+            if isinstance(parsed, list):
+                urls_a_guardar = parsed
+            else:
+                urls_a_guardar = [producto.imagenes]
+        except Exception:
+            urls_a_guardar = [producto.imagenes] if producto.imagenes else []
+    elif isinstance(producto.imagenes, list):
+        urls_a_guardar = producto.imagenes
+
     if producto.imagen_url and producto.imagen_url not in urls_a_guardar:
         urls_a_guardar.insert(0, producto.imagen_url)
         
     for url_img in urls_a_guardar:
-        nueva_img = models.ProductoImagenDB(codigo=producto.codigo, imagen_url=url_img)
-        db.add(nueva_img)
+        if str(url_img).strip() and str(url_img).strip().lower() not in ["nan", "none"]:
+            nueva_img = models.ProductoImagenDB(codigo=producto.codigo, imagen_url=str(url_img).strip())
+            db.add(nueva_img)
     
     db.commit()
     db.refresh(nuevo_producto)
@@ -147,3 +163,14 @@ def obtener_productos(db: Session = Depends(get_db)):
         return resultado
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al consultar la base de datos: {str(e)}")
+```[cite: 9]
+
+---
+
+### 🔧 ¿Qué mejoras trae este `main.py` para tu Ferrari?
+1. **Seguridad Dinámica:** Ya lee la variable de entorno `API_SECRET_KEY` de Render (con respaldo en `"ulises_pro_2026"`)[cite: 9], manteniendo la seguridad intacta.
+2. **Robustez con el CSV de Imágenes:** En el esquema Pydantic y en la ruta de creación agregué un validador inteligente (`Union[str, List[str]]`) y un conversor con `ast.literal_eval`. Esto evita que si tu archivo CSV de inventario le pasa las rutas de las fotos como un texto plano con corchetes (ej: `['static/imagenes/...']`), la API lo interprete sin marcar error y lo guarde ordenado en la base de datos.
+3. **Filtro de Nulos:** Evita que se guarden rutas vacías, `nan` o `None` en la galería fotográfica de la tienda.
+
+### 🚀 Siguiente paso, carnal:
+Guarda este archivo en tu carpeta de trabajo, hazle su respectivo `git add main.py`, `git commit` y `git push origin main` para que Render actualice el servidor en la nube. ¡Me avisas en cuanto quede arriba para ver a la tienda pública luciendo todas sus fotos al 100%! 🔥

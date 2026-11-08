@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 import pandas as pd
 from urllib.parse import quote
+import ast
 import os
 
 # --- CONFIGURACIÓN DE SEGURIDAD Y ACCESO ---
@@ -10,6 +11,8 @@ NUMERO_VENTAS_WHATSAPP = "5215659113579"  # Tu WhatsApp comercial de ventas
 
 # URL oficial de la Ferrari en la nube (Render)
 URL_FASTAPI_PRODUCTOS = "https://kinetik-on-line.onrender.com/productos/"
+URL_BASE_RENDER = "https://kinetik-on-line.onrender.com"
+PLACEHOLDER_OFICIAL = "https://via.placeholder.com/400x300/2E7D32/FFFFFF.png?text=KINETIK+Hecho+en+M%C3%A9xico"
 
 st.set_page_config(page_title="Hecho en México - KINETIK Tienda Oficial", page_icon="🇲🇽", layout="wide")
 
@@ -67,6 +70,17 @@ st.divider()
 if "likes" not in st.session_state:
     st.session_state.likes = {}
 
+def construir_url_imagen(ruta_raw: str) -> str:
+    """Convierte una ruta local o limpia en una URL remota válida en Render."""
+    if not ruta_raw or str(ruta_raw).strip().lower() in ["nan", "none", ""]:
+        return PLACEHOLDER_OFICIAL
+    
+    clean_path = str(ruta_raw).strip().replace("\\", "/")
+    if clean_path.startswith("http"):
+        return clean_path
+    
+    return f"{URL_BASE_RENDER}/{clean_path.lstrip('/')}"
+
 try:
     res = requests.get(URL_FASTAPI_PRODUCTOS)
     if res.status_code == 200:
@@ -89,8 +103,8 @@ try:
                 df_filtrado = df_filtrado[df_filtrado['departamento'] == sel_depto]
             if buscar:
                 df_filtrado = df_filtrado[
-                    df_filtrado['descripcion_original'].str.contains(buscar, case=False, na=False) |
-                    df_filtrado['codigo'].str.contains(buscar, case=False, na=False)
+                    df_filtrado['descripcion_original'].astype(str).str.contains(buscar, case=False, na=False) |
+                    df_filtrado['codigo'].astype(str).str.contains(buscar, case=False, na=False)
                 ]
 
             st.caption(f"Mostrando {len(df_filtrado)} prendas disponibles en catálogo")
@@ -107,50 +121,53 @@ try:
                 color_p = str(row.get('color', 'N/A'))
                 historia = str(row.get('historia_ia', 'Calidad textil garantizada.'))
                 
-                lista_imagenes = row.get('imagenes', [])
+                # Extracción robusta de imágenes (Manejo de string lista de Python desde CSV)
+                raw_imgs = row.get('imagenes', [])
+                lista_imagenes = []
+                
+                if isinstance(raw_imgs, str):
+                    try:
+                        parsed = ast.literal_eval(raw_imgs)
+                        if isinstance(parsed, list):
+                            lista_imagenes = parsed
+                        else:
+                            lista_imagenes = [raw_imgs]
+                    except Exception:
+                        lista_imagenes = [raw_imgs] if raw_imgs else []
+                elif isinstance(raw_imgs, list):
+                    lista_imagenes = raw_imgs
+                
                 if not lista_imagenes and row.get('imagen_url'):
                     lista_imagenes = [row.get('imagen_url')]
 
+                # Filtrar valores nulos reales
+                lista_imagenes_limpia = [
+                    img for img in lista_imagenes 
+                    if str(img).strip() and str(img).strip().lower() not in ["nan", "none"]
+                ]
+
                 with cols[idx % 3]:
                     with st.container(border=True):
-                        # --- CARGA DINÁMICA DE GALERÍA DE IMÁGENES (BLINDADA AL 100%) ---
-                        if lista_imagenes:
-                            if len(lista_imagenes) > 1:
-                                nombres_pestanas = [f"Foto {i+1}" for i in range(len(lista_imagenes))]
+                        # --- GALERÍA FOTOGRÁFICA (BLINDADA AL 100%) ---
+                        if lista_imagenes_limpia:
+                            if len(lista_imagenes_limpia) > 1:
+                                nombres_pestanas = [f"Foto {i+1}" for i in range(len(lista_imagenes_limpia))]
                                 tabs_fotos = st.tabs(nombres_pestanas)
                                 for t_idx, tab_obj in enumerate(tabs_fotos):
                                     with tab_obj:
-                                        img_path = str(lista_imagenes[t_idx]).strip()
-                                        if img_path and img_path != "nan" and img_path != "None":
-                                            img_path_clean = img_path.replace("\\", "/")
-                                            if not img_path_clean.startswith("http"):
-                                                img_url = f"https://kinetik-on-line.onrender.com/{img_path_clean.lstrip('/')}"
-                                            else:
-                                                img_url = img_path_clean
-                                            
-                                            try:
-                                                st.image(img_url, use_container_width=True)
-                                            except Exception:
-                                                st.image("https://via.placeholder.com/400x300.png?text=Hecho+en+M%C3%A9xico", use_container_width=True)
-                                        else:
-                                            st.image("https://via.placeholder.com/400x300.png?text=Hecho+en+M%C3%A9xico", use_container_width=True)
+                                        img_url = construir_url_imagen(lista_imagenes_limpia[t_idx])
+                                        try:
+                                            st.image(img_url, use_container_width=True)
+                                        except Exception:
+                                            st.image(PLACEHOLDER_OFICIAL, use_container_width=True)
                             else:
-                                img_path = str(lista_imagenes[0]).strip()
-                                if img_path and img_path != "nan" and img_path != "None":
-                                    img_path_clean = img_path.replace("\\", "/")
-                                    if not img_path_clean.startswith("http"):
-                                        img_url = f"https://kinetik-on-line.onrender.com/{img_path_clean.lstrip('/')}"
-                                    else:
-                                        img_url = img_path_clean
-                                    
-                                    try:
-                                        st.image(img_url, use_container_width=True)
-                                    except Exception:
-                                        st.image("https://via.placeholder.com/400x300.png?text=Hecho+en+M%C3%A9xico", use_container_width=True)
-                                else:
-                                    st.image("https://via.placeholder.com/400x300.png?text=Hecho+en+M%C3%A9xico", use_container_width=True)
+                                img_url = construir_url_imagen(lista_imagenes_limpia[0])
+                                try:
+                                    st.image(img_url, use_container_width=True)
+                                except Exception:
+                                    st.image(PLACEHOLDER_OFICIAL, use_container_width=True)
                         else:
-                            st.image("https://via.placeholder.com/400x300.png?text=Hecho+en+M%C3%A9xico", use_container_width=True)
+                            st.image(PLACEHOLDER_OFICIAL, use_container_width=True)
                         
                         st.subheader(f"👕 {prenda_nombre}")
                         st.markdown(f"**{desc_orig}**")
@@ -181,3 +198,13 @@ try:
         st.error(f"Error al conectar con el servidor backend: Status {res.status_code}")
 except Exception as e:
     st.error(f"No se pudo cargar la tienda online: {e}")
+
+
+---
+
+### 🚀 ¿Cómo la probamos de volada, carnal?
+
+1. Guarda el código arriba como `app_tienda_publica.py`[cite: 11].
+2. Ejecuta en tu terminal:
+   ```powershell
+   streamlit run app_tienda_publica.py

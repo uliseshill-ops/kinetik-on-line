@@ -1,0 +1,6 @@
+﻿codigo,imagen_url,prenda,descripcion_original,precio_costo,precio_venta,color,precio_mayoreo,departamento,existencia,inventario_minimo,inventario_maximo,genero,tipo_tela,corte,proveedor,talla,costo_indirecto,margen,codigo_barras,columna,caja,historia_ia,created_at,imagenes
+3641741,static/imagenes/3641741_1.jpeg,SUDADERA,Sudadera Oversize negra algodón ,600.0,950.0,NEGRO,855.0,UNISEX,4,5,50,UNISEX,ALGODÓN,OVER,KINETIK,G,0.0,0.0,0075036417412,,,"[ESPAÑOL]
+Prenda de alta calidad Hecho en México.
+
+[ENGLISH]
+Premium product Made in Mexico. (Error API Groq: 401)",2026-11-08T18:52:51,"['static/imagenes/3641741_1.jpeg', 'static/imagenes/3641741_2.jpeg', 'static/imagenes/3641741_3.jpeg']"

@@ -2,9 +2,6 @@ fastapi
 uvicorn
 sqlalchemy
 pydantic
-streamlit
 pandas
 requests
-python-multipart
-pillow
-python-barcode
+psycopg2-binary
