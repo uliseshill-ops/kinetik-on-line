@@ -6,16 +6,16 @@ class ProductoDB(Base):
     __tablename__ = "productos"
 
     codigo = Column(String, primary_key=True, index=True) # Tu llave primaria real
-    prenda = Column(String)[cite: 15]
-    descripcion_original = Column(String)[cite: 15]
-    precio_costo = Column(Float)[cite: 15]
-    precio_venta = Column(Float)[cite: 15]
-    color = Column(String)[cite: 15]
-    precio_mayoreo = Column(Float)[cite: 15]
-    departamento = Column(String)[cite: 15]
-    existencia = Column(Integer, default=0)[cite: 15]
-    inventario_minimo = Column(Integer, default=0)[cite: 15]
-    inventario_maximo = Column(Integer, default=0)[cite: 15]
+    prenda = Column(String)
+    descripcion_original = Column(String)
+    precio_costo = Column(Float)
+    precio_venta = Column(Float)
+    color = Column(String)
+    precio_mayoreo = Column(Float)
+    departamento = Column(String)
+    existencia = Column(Integer, default=0)
+    inventario_minimo = Column(Integer, default=0)
+    inventario_maximo = Column(Integer, default=0)
     
     # Columnas complementarias y de galería que exige el main.py
     imagen_url = Column(String, nullable=True)
@@ -30,7 +30,7 @@ class ProductoDB(Base):
     columna = Column(String, nullable=True)
     caja = Column(String, nullable=True)
     
-    historia_ia = Column(String)[cite: 15]
+    historia_ia = Column(String)
     created_at = Column(DateTime, server_default=func.datetime('now', 'localtime'))
 
 # Modelo relacional secundario para la galería múltiple de fotos
