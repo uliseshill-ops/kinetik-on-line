@@ -1,28 +1,29 @@
-from fastapi import FastAPI, Depends, HTTPException, Header, Body
+from fastapi import FastAPI, Depends, HTTPException, Header, Body, UploadFile, File
 from sqlalchemy.orm import Session
 import models
 from database import SessionLocal, engine
 from pydantic import BaseModel
 from typing import Optional, List, Union
 from ai_helper import generar_storytelling_mexicano
-from fastapi.staticfiles import StaticFiles
 import os
+from supabase import create_client, Client
 
-# 1. Inicialización de la Base de Datos (Compatible con SQLite y Supabase/PostgreSQL)
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Hecho en México API - E-commerce Engine",
-    description="Backend optimizado para inventarios KINETIK con IA e integración de Supabase/SQLite",
-    version="3.1.0"
+    description="Backend optimizado para inventarios KINETIK con IA e integración de Supabase Storage",
+    version="3.2.0"
 )
 
-# 2. SEGURIDAD PRO: Llave oficial del Ferrari
 API_SECRET_KEY = os.getenv("API_SECRET_KEY", "ulises_pro_2026")
 
-# Montamos la carpeta estática para galería de imágenes
-os.makedirs("static/imagenes", exist_ok=True)
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# Configuración de Supabase Storage en la Nube
+SUPABASE_URL = os.getenv("SUPABASE_URL", "https://tu-proyecto.supabase.co")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY", "tu-supabase-service-role-o-anon-key")
+SUPABASE_BUCKET = "galeria-prendas"
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 def get_db():
     db = SessionLocal()
@@ -31,7 +32,6 @@ def get_db():
     finally:
         db.close()
 
-# 3. ESQUEMA OFICIAL: Alineado con tu Excel, Pandas DataFrame y Frontend Streamlit
 class ProductoSchema(BaseModel):
     codigo: str
     prenda: str
@@ -46,8 +46,6 @@ class ProductoSchema(BaseModel):
     departamento: Optional[str] = "GENERAL"
     inventario_minimo: Optional[int] = 0
     inventario_maximo: Optional[int] = 0
-    
-    # Campos complementarios opcionales para escalabilidad
     genero: Optional[str] = None
     tipo_tela: Optional[str] = None
     corte: Optional[str] = None
@@ -59,22 +57,49 @@ class ProductoSchema(BaseModel):
     columna: Optional[str] = None
     caja: Optional[str] = None
 
+@app.post("/subir-imagen-supabase/")
+async def subir_imagen_supabase(
+    codigo: str, 
+    file: UploadFile = File(...), 
+    x_token: str = Header(None)
+):
+    if x_token != API_SECRET_KEY:
+        raise HTTPException(status_code=403, detail="Acceso denegado: Token inválido, compa.")
+    
+    try:
+        contents = await file.read()
+        file_path = f"{codigo}_{file.filename}"
+        
+        # Subida directa al Bucket público de Supabase Storage
+        supabase.storage.from_(SUPABASE_BUCKET).upload(
+            file_path, 
+            contents, 
+            file_options={"content-type": file.content_type, "upsert": "true"}
+        )
+        
+        # Obtenemos la URL pública permanente
+        public_url_res = supabase.storage.from_(SUPABASE_BUCKET).get_public_url(file_path)
+        
+        return {
+            "mensaje": "¡Imagen almacenada con éxito en Supabase Storage!", 
+            "imagen_url": public_url_res
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al subir imagen al Storage: {str(e)}")
+
 @app.post("/crear-producto/")
 def crear_producto(
     producto: ProductoSchema, 
     db: Session = Depends(get_db), 
     x_token: str = Header(None)
 ):
-    # Validamos la llave de seguridad del Ferrari
     if x_token != API_SECRET_KEY:
         raise HTTPException(status_code=403, detail="Acceso denegado: Token inválido, compa.")
 
-    # Validación estricta por Primary Key 'codigo'
     producto_existente = db.query(models.ProductoDB).filter(models.ProductoDB.codigo == producto.codigo).first()
     if producto_existente:
         raise HTTPException(status_code=400, detail=f"El código '{producto.codigo}' ya existe en el inventario.")
 
-    # PROCESO CON IA BLINDADO: Si falla la red o la API, usa la historia de respaldo sin tirar la API (Error 500)
     contexto = f"Color: {producto.color}. Tela: {producto.tipo_tela or ''}. Proveedor: {producto.proveedor or ''}"
     
     try:
@@ -82,8 +107,8 @@ def crear_producto(
         if not historia:
             historia = "[ESPAÑOL]\nPrenda de excelente calidad Hecho en México.\n\n[ENGLISH]\nPremium product proudly Made in Mexico."
     except Exception as ai_err:
-        print(f"⚠️ Aviso en backend: La IA no respondió ({ai_err}). Usando historia de respaldo para no detener el flujo.")
-        historia = "[ESPAÑOL]\nPrenda deportiva de alta calidad Hecho en México, diseñada para impulsar tu estilo con máximo confort.\n\n[ENGLISH]\nHigh-end sportswear proudly Made in Mexico, crafted for ultimate performance and style."
+        print(f"⚠️ Aviso en backend: La IA no respondió ({ai_err}). Usando historia de respaldo.")
+        historia = "[ESPAÑOL]\nPrenda deportiva de alta calidad Hecho en México, diseñada para impulsar tu estilo.\n\n[ENGLISH]\nHigh-end sportswear proudly Made in Mexico."
 
     datos_producto = producto.dict(exclude={'imagenes'})
     nuevo_producto = models.ProductoDB(
@@ -93,7 +118,6 @@ def crear_producto(
     
     db.add(nuevo_producto)
     
-    # Normalización inteligente de galería de fotos
     urls_a_guardar = []
     if isinstance(producto.imagenes, str):
         try:
@@ -120,7 +144,7 @@ def crear_producto(
     db.refresh(nuevo_producto)
     
     return {
-        "mensaje": "¡Producto con galería guardado exitosamente!", 
+        "mensaje": "¡Producto con galería en Supabase guardado exitosamente!", 
         "codigo": nuevo_producto.codigo, 
         "historia": historia,
         "imagenes": urls_a_guardar
@@ -130,7 +154,7 @@ def crear_producto(
 def actualizar_fotos(
     codigo: str, 
     imagenes: List[str] = Body(..., embed=True), 
-    modo: str = Body("agregar", embed=True), # Opciones: "agregar" (default) o "reemplazar"
+    modo: str = Body("agregar", embed=True),
     db: Session = Depends(get_db), 
     x_token: str = Header(None)
 ):
@@ -160,7 +184,7 @@ def actualizar_fotos(
         
     db.commit()
     return {
-        "mensaje": f"¡Galería actualizada exitosamente en modo '{modo}' para el SKU {codigo}!", 
+        "mensaje": f"¡Galería actualizada en Supabase en modo '{modo}' para el SKU {codigo}!", 
         "imagenes": urls_finales
     }
 
@@ -171,15 +195,12 @@ def obtener_productos(db: Session = Depends(get_db)):
         resultado = []
         for p in productos:
             p_dict = {c.name: getattr(p, c.name) for c in p.__table__.columns}
-            
-            # CONSULTA MAESTRA DE GALERÍA: Buscamos explícitamente en la tabla hija en Supabase por SKU
             imagenes_asociadas = db.query(models.ProductoImagenDB).filter(
                 models.ProductoImagenDB.codigo == p.codigo
             ).all()
             
             p_dict['imagenes'] = [img.imagen_url for img in imagenes_asociadas] if imagenes_asociadas else []
             
-            # Respaldo dinámico si la galería está vacía pero hay imagen principal registrada
             if not p_dict['imagenes'] and p_dict.get('imagen_url'):
                 p_dict['imagenes'] = [p_dict['imagen_url']]
             
