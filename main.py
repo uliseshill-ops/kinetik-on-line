@@ -14,7 +14,7 @@ models.Base.metadata.create_all(bind=engine)
 app = FastAPI(
     title="Hecho en México API - E-commerce Engine",
     description="Backend optimizado para inventarios KINETIK con IA e integración de Supabase/SQLite",
-    version="3.0.0"
+    version="3.1.0"
 )
 
 # 2. SEGURIDAD PRO: Llave oficial del Ferrari
@@ -171,10 +171,21 @@ def obtener_productos(db: Session = Depends(get_db)):
         resultado = []
         for p in productos:
             p_dict = {c.name: getattr(p, c.name) for c in p.__table__.columns}
-            # Extraemos limpiamente la lista de imágenes de la tabla hija relacional
-            p_dict['imagenes'] = [img.imagen_url for img in p.imagenes] if hasattr(p, 'imagenes') else []
+            
+            # CONSULTA MAESTRA DE GALERÍA: Buscamos explícitamente en la tabla hija en Supabase por SKU
+            imagenes_asociadas = db.query(models.ProductoImagenDB).filter(
+                models.ProductoImagenDB.codigo == p.codigo
+            ).all()
+            
+            p_dict['imagenes'] = [img.imagen_url for img in imagenes_asociadas] if imagenes_asociadas else []
+            
+            # Respaldo dinámico si la galería está vacía pero hay imagen principal registrada
+            if not p_dict['imagenes'] and p_dict.get('imagen_url'):
+                p_dict['imagenes'] = [p_dict['imagen_url']]
+            
             if not p_dict.get('imagen_url') and p_dict['imagenes']:
                 p_dict['imagen_url'] = p_dict['imagenes'][0]
+                
             resultado.append(p_dict)
         return resultado
     except Exception as e:
