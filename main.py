@@ -8,15 +8,19 @@ from ai_helper import generar_storytelling_mexicano
 from fastapi.staticfiles import StaticFiles
 import os
 
-# Inicialización de la Base de Datos (compatible con Supabase/PostgreSQL y SQLite)
+# 1. Inicialización de la Base de Datos (Compatible con SQLite y Supabase/PostgreSQL)
 models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Hecho en México API - E-commerce Engine")
+app = FastAPI(
+    title="Hecho en México API - E-commerce Engine",
+    description="Backend optimizado para inventarios KINETIK con IA e integración de Supabase/SQLite",
+    version="3.0.0"
+)
 
-# SEGURIDAD PRO: Lee la variable de entorno de Render, con respaldo local
+# 2. SEGURIDAD PRO: Llave oficial del Ferrari
 API_SECRET_KEY = os.getenv("API_SECRET_KEY", "ulises_pro_2026")
 
-# Montamos la carpeta estática para servir las fotos localmente o en respaldo
+# Montamos la carpeta estática para galería de imágenes
 os.makedirs("static/imagenes", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -27,7 +31,7 @@ def get_db():
     finally:
         db.close()
 
-# ESQUEMA OFICIAL: Coincide al 100% con tu inventario, frontend y galería múltiple
+# 3. ESQUEMA OFICIAL: Alineado con tu Excel, Pandas DataFrame y Frontend Streamlit
 class ProductoSchema(BaseModel):
     codigo: str
     prenda: str
@@ -37,13 +41,13 @@ class ProductoSchema(BaseModel):
     color: str
     existencia: int
     imagen_url: Optional[str] = None  
-    imagenes: Optional[Union[str, List[str]]] = [] # <--- Acepta lista o string plano desde CSV
+    imagenes: Optional[Union[str, List[str]]] = []
     precio_mayoreo: Optional[float] = 0.0
     departamento: Optional[str] = "GENERAL"
     inventario_minimo: Optional[int] = 0
     inventario_maximo: Optional[int] = 0
     
-    # Campos complementarios opcionales
+    # Campos complementarios opcionales para escalabilidad
     genero: Optional[str] = None
     tipo_tela: Optional[str] = None
     corte: Optional[str] = None
@@ -56,18 +60,30 @@ class ProductoSchema(BaseModel):
     caja: Optional[str] = None
 
 @app.post("/crear-producto/")
-def crear_producto(producto: ProductoSchema, db: Session = Depends(get_db), x_token: str = Header(None)):
+def crear_producto(
+    producto: ProductoSchema, 
+    db: Session = Depends(get_db), 
+    x_token: str = Header(None)
+):
+    # Validamos la llave de seguridad del Ferrari
     if x_token != API_SECRET_KEY:
         raise HTTPException(status_code=403, detail="Acceso denegado: Token inválido, compa.")
 
-    # Validación de duplicados por llave primaria estricta 'codigo'
+    # Validación estricta por Primary Key 'codigo'
     producto_existente = db.query(models.ProductoDB).filter(models.ProductoDB.codigo == producto.codigo).first()
     if producto_existente:
         raise HTTPException(status_code=400, detail=f"El código '{producto.codigo}' ya existe en el inventario.")
 
-    # Generación de Storytelling con IA
+    # PROCESO CON IA BLINDADO: Si falla la red o la API, usa la historia de respaldo sin tirar la API (Error 500)
     contexto = f"Color: {producto.color}. Tela: {producto.tipo_tela or ''}. Proveedor: {producto.proveedor or ''}"
-    historia = generar_storytelling_mexicano(producto.descripcion_original, contexto, producto.departamento or "MEXICO")
+    
+    try:
+        historia = generar_storytelling_mexicano(producto.descripcion_original, contexto, producto.departamento or "MEXICO")
+        if not historia:
+            historia = "[ESPAÑOL]\nPrenda de excelente calidad Hecho en México.\n\n[ENGLISH]\nPremium product proudly Made in Mexico."
+    except Exception as ai_err:
+        print(f"⚠️ Aviso en backend: La IA no respondió ({ai_err}). Usando historia de respaldo para no detener el flujo.")
+        historia = "[ESPAÑOL]\nPrenda deportiva de alta calidad Hecho en México, diseñada para impulsar tu estilo con máximo confort.\n\n[ENGLISH]\nHigh-end sportswear proudly Made in Mexico, crafted for ultimate performance and style."
 
     datos_producto = producto.dict(exclude={'imagenes'})
     nuevo_producto = models.ProductoDB(
@@ -77,7 +93,7 @@ def crear_producto(producto: ProductoSchema, db: Session = Depends(get_db), x_to
     
     db.add(nuevo_producto)
     
-    # Normalización inteligente de imágenes (por si vienen como string de lista del CSV o como lista real)
+    # Normalización inteligente de galería de fotos
     urls_a_guardar = []
     if isinstance(producto.imagenes, str):
         try:
