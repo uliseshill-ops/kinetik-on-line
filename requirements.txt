@@ -5,3 +5,4 @@ pydantic
 pandas
 requests
 psycopg2-binary
+supabase
