@@ -31,7 +31,7 @@ class ProductoDB(Base):
     caja = Column(String, nullable=True)
     
     historia_ia = Column(String)[cite: 15]
-    created_at = Column(DateTime, server_default=func.datetime('now', 'localtime'))[cite: 15]
+    created_at = Column(DateTime, server_default=func.datetime('now', 'localtime'))
 
 # Modelo relacional secundario para la galería múltiple de fotos
 class ProductoImagenDB(Base):
