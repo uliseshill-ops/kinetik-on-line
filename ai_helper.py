@@ -16,23 +16,23 @@ def generar_storytelling_mexicano(nombre_producto, descripcion_corta, estado_ori
     client = Groq(api_key=api_key)
     
     prompt = f"""
-    Eres un experto en marketing internacional y cultura mexicana. 
-    Producto: {nombre_producto}
+    Eres un experto en marketing internacional de ropa deportiva y cultura mexicana. 
+    Producto: {descripcion_corta}
     Origen: {estado_origen}
-    Descripción: {descripcion_corta}
-
+    Descripción: {nombre_producto}
+    
     Genera dos historias cautivadoras para el producto.
     
     ESTRUCTURA REQUERIDA:
     [ESPAÑOL]
-    Crea una descripción emocional y profesional de 2 párrafos que resalte 
+    Crea una descripción emocional y profesional de 1 párrafos que resalte 
     la calidad de lo 'Hecho en México' y la tradición de {estado_origen}.
     
     [ENGLISH]
     (Translate the same story into professional, high-end marketing English)
     
     REGLAS:
-    - No uses más de 4 párrafos en total.
+    - No uses más de 2 párrafos en total.
     - Mantén el tono artesanal y premium.
     """
     
