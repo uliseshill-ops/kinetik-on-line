@@ -106,8 +106,52 @@ def generar_imagen_barcode_memoria(codigo_barras_str: str, precio_venta: float =
     buffer_out.seek(0)
     return buffer_out
 
+# Configuración de Página Principal
 st.set_page_config(page_title="Hecho en México - Admin 2026", page_icon="🇲🇽", layout="wide")
+
+# ==============================================================================
+# 🔒 MURO DE SEGURIDAD / PASSWORD GATE PRO
+# ==============================================================================
+if "autenticado" not in st.session_state:
+    st.session_state["autenticado"] = False
+
+if not st.session_state["autenticado"]:
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    c_login1, c_login2, c_login3 = st.columns([1, 2, 1])
+    
+    with c_login2:
+        st.title("🔒 KINETIK Admin Panel")
+        st.subheader("Acceso Restringido - Control de Inventarios")
+        st.info("Ingresa la contraseña maestra para abrir la cabecera de control.")
+        
+        with st.form("form_login_maestro"):
+            password_input = st.text_input("Contraseña de Acceso:", type="password", placeholder="••••••••••••")
+            btn_login = st.form_submit_button("🔑 Entrar al Sistema", use_container_width=True)
+            
+            if btn_login:
+                # Validamos contra la llave del Ferrari
+                if password_input == API_TOKEN:
+                    st.session_state["autenticado"] = True
+                    st.success("¡Acceso concedido! Entrando a la pista...")
+                    st.rerun()
+                else:
+                    st.error("🚫 Contraseña incorrecta, compa. Revisa bien la clave de acceso.")
+                    
+    # Detenemos la renderización si el usuario no ha ingresado la contraseña correcta
+    st.stop()
+# ==============================================================================
+
+# --- CORE DEL PANEL DE CONTROL (SOLO VISIBLE SI ESTÁ AUTENTICADO) ---
 st.title("KINETIK Hecho en México - Panel de Control (Cloud Storage Supabase)")
+
+# Botón lateral/encabezado opcional para cerrar sesión si se requiere
+with st.sidebar:
+    st.markdown("### 👤 Sesión Activa")
+    st.write(f"**Usuario:** Admin Pro")
+    st.write(f"**Token Activo:** `...{API_TOKEN[-6:]}`")
+    if st.button("🚪 Cerrar Sesión", use_container_width=True):
+        st.session_state["autenticado"] = False
+        st.rerun()
 
 tab1, tab2, tab3, tab4 = st.tabs([
     "🥇️ KINETIK - Quienes somos", 
@@ -404,7 +448,6 @@ with tab4:
                                         st.warning(f"⚠️ No se pudo subir {foto.name}: {r_subida.text}")
                             
                             if rutas_nuevas:
-                                # Combinamos con las actuales si el modo es "agregar"
                                 if "Agregar" in modo_actualizacion:
                                     rutas_finales_envio = list(set(fotos_actuales + rutas_nuevas))
                                     modo_api = "agregar"
