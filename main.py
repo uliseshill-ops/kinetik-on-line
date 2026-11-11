@@ -13,7 +13,7 @@ models.Base.metadata.create_all(bind=engine)
 app = FastAPI(
     title="Hecho en México API - E-commerce Engine",
     description="Backend optimizado para inventarios KINETIK con IA e integración de Supabase Storage",
-    version="3.2.0"
+    version="3.2.1"
 )
 
 API_SECRET_KEY = os.getenv("API_SECRET_KEY", "ulises_pro_2026")
@@ -165,28 +165,37 @@ def actualizar_fotos(
     if not producto:
         raise HTTPException(status_code=404, detail=f"El producto con código '{codigo}' no existe.")
     
-    if modo == "reemplazar":
-        db.query(models.ProductoImagenDB).filter(models.ProductoImagenDB.codigo == codigo).delete()
-        urls_finales = []
-    else:
-        urls_finales = [img.imagen_url for img in producto.imagenes]
-    
-    for url_img in imagenes:
-        if url_img not in urls_finales:
-            urls_finales.append(url_img)
-            nueva_img = models.ProductoImagenDB(codigo=codigo, imagen_url=url_img)
-            db.add(nueva_img)
-    
-    if urls_finales:
-        producto.imagen_url = urls_finales[0]
-    else:
-        producto.imagen_url = None
+    try:
+        # Consultamos explícitamente las imágenes asociadas en la tabla relacional
+        imagenes_existentes_db = db.query(models.ProductoImagenDB).filter(
+            models.ProductoImagenDB.codigo == codigo
+        ).all()
         
-    db.commit()
-    return {
-        "mensaje": f"¡Galería actualizada en Supabase en modo '{modo}' para el SKU {codigo}!", 
-        "imagenes": urls_finales
-    }
+        if modo == "reemplazar":
+            db.query(models.ProductoImagenDB).filter(models.ProductoImagenDB.codigo == codigo).delete()
+            urls_finales = []
+        else:
+            urls_finales = [img.imagen_url for img in imagenes_existentes_db] if imagenes_existentes_db else []
+        
+        for url_img in imagenes:
+            if url_img not in urls_finales:
+                urls_finales.append(url_img)
+                nueva_img = models.ProductoImagenDB(codigo=codigo, imagen_url=url_img)
+                db.add(nueva_img)
+        
+        if urls_finales:
+            producto.imagen_url = urls_finales[0]
+        else:
+            producto.imagen_url = None
+            
+        db.commit()
+        return {
+            "mensaje": f"¡Galería actualizada en Supabase en modo '{modo}' para el SKU {codigo}!", 
+            "imagenes": urls_finales
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error interno al actualizar galería: {str(e)}")
 
 @app.get("/productos/")
 def obtener_productos(db: Session = Depends(get_db)):
