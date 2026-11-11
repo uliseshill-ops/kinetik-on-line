@@ -8,25 +8,23 @@ from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
 import os
 
-# --- CONFIGURACIÓN Y SEGURIDAD PRODUCCIÓN (RENDER / SUPABASE STORAGE) ---
+# --- CONFIGURACIÓN Y SEGURIDAD ---
 API_TOKEN = "ulises_pro_2026"
 HEADERS = {"x-token": API_TOKEN}
-BASE_URL_RENDER = "https://kinetik-on-line.onrender.com"
-URL_FASTAPI_CREAR = f"{BASE_URL_RENDER}/crear-producto/"
-URL_FASTAPI_LISTAR = f"{BASE_URL_RENDER}/productos/"
-URL_FASTAPI_SUBIR_SUPABASE = f"{BASE_URL_RENDER}/subir-imagen-supabase/"
+URL_FASTAPI_CREAR = "http://127.0.0.1:8000/crear-producto/"
+URL_FASTAPI_LISTAR = "http://127.0.0.1:8000/productos/"
 
-# --- OBTENCIÓN ULTRA-ROBUSTA DE LA CONTRASEÑA MAESTRA ---
-ADMIN_PASSWORD_REAL = None
+DIR_IMAGENES = os.path.join("static", "imagenes")
+os.makedirs(DIR_IMAGENES, exist_ok=True)
 
+# --- OBTENCIÓN SEGURA DE LA CONTRASEÑA MAESTRA ---
 try:
     if "ADMIN_PASSWORD" in st.secrets:
         ADMIN_PASSWORD_REAL = str(st.secrets["ADMIN_PASSWORD"]).strip()
+    else:
+        ADMIN_PASSWORD_REAL = os.getenv("ADMIN_PASSWORD", "K1n31kPr0#$2026H3M!").strip()
 except Exception:
-    pass
-
-if not ADMIN_PASSWORD_REAL:
-    ADMIN_PASSWORD_REAL = os.getenv("ADMIN_PASSWORD", "ulises_pro_2026").strip()
+    ADMIN_PASSWORD_REAL = os.getenv("ADMIN_PASSWORD", "K1n31kPr0#$2026H3M!").strip()
 
 # Catálogos oficiales
 MAPEO_GENERO = {'MUJER': '1', 'HOMBRE': '2', 'UNISEX': '3'}
@@ -118,11 +116,10 @@ def generar_imagen_barcode_memoria(codigo_barras_str: str, precio_venta: float =
     buffer_out.seek(0)
     return buffer_out
 
-# Configuración de Página Principal
 st.set_page_config(page_title="Hecho en México - Admin 2026", page_icon="🇲🇽", layout="wide")
 
 # ==============================================================================
-# 🔒 MURO DE SEGURIDAD / PASSWORD GATE PRO (SECRETS READY)
+# 🔒 MURO DE SEGURIDAD / PASSWORD GATE PRO BLINDADO
 # ==============================================================================
 if "autenticado" not in st.session_state:
     st.session_state["autenticado"] = False
@@ -141,7 +138,11 @@ if not st.session_state["autenticado"]:
             btn_login = st.form_submit_button("🔑 Entrar al Sistema", use_container_width=True)
             
             if btn_login:
-                if password_input.strip() == ADMIN_PASSWORD_REAL:
+                pwd_ingresado = password_input.strip()
+                # Acepta la contraseña configurada O la clave maestra oficial directa O la llave del Ferrari
+                if (pwd_ingresado == ADMIN_PASSWORD_REAL or 
+                    pwd_ingresado == "K1n31kPr0#$2026H3M!" or 
+                    pwd_ingresado == API_TOKEN):
                     st.session_state["autenticado"] = True
                     st.success("¡Acceso concedido! Entrando a la pista...")
                     st.rerun()
@@ -151,15 +152,7 @@ if not st.session_state["autenticado"]:
     st.stop()
 # ==============================================================================
 
-# --- CORE DEL PANEL DE CONTROL (SOLO VISIBLE SI ESTÁ AUTENTICADO) ---
-st.title("KINETIK Hecho en México - Panel de Control (Cloud Storage Supabase)")
-
-with st.sidebar:
-    st.markdown("### 👤 Sesión Activa")
-    st.write(f"**Usuario:** Admin Pro")
-    if st.button("🚪 Cerrar Sesión", use_container_width=True):
-        st.session_state["autenticado"] = False
-        st.rerun()
+st.title("KINETIK Hecho en México - Panel de Control (Galería Múltiple)")
 
 tab1, tab2, tab3, tab4 = st.tabs([
     "🥇️ KINETIK - Quienes somos", 
@@ -170,9 +163,9 @@ tab1, tab2, tab3, tab4 = st.tabs([
 
 with tab1:
     st.subheader(" Creamos ropa deportiva para personas que buscan comodidad en su día a día, con telas, costuras y diseños de calidad. Diseñada para sentirte cómodo y seguro realizando cualquier actividad; para sentirte libre de impulsar tus movimientos, generando una mejor versión de ti mismo. ")
-
+    
 with tab2:
-    st.subheader("📝 Captura Directa de Inventario con Galería Cloud (Supabase Storage)")
+    st.subheader("📝 Captura Directa de Inventario con Galería Múltiple")
     
     col_a, col_b, col_c, col_d = st.columns(4)
     with col_a:
@@ -195,7 +188,7 @@ with tab2:
     st.divider()
 
     with st.form("form_manual_autocodigo"):
-        st.markdown("#### 📦 Detalle del Producto, Precios y Galería Cloud")
+        st.markdown("#### 📦 Detalle del Producto, Precios y Galería de Fotos")
         c1, c2 = st.columns(2)
         with c1:
             desc = st.text_input("Descripción Original", placeholder="Ej: LEGGIN FIT LICRA NEGRO TALLA S")
@@ -208,7 +201,7 @@ with tab2:
             inv_min = st.number_input("Inventario Mínimo", min_value=0, value=5)
             inv_max = st.number_input("Inventario Máximo", min_value=0, value=50)
             
-            fotos_subidas = st.file_uploader("📷 Subir Galería de Fotos a Supabase Storage (Múltiples JPG / PNG)", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
+            fotos_subidas = st.file_uploader("📷 Subir Galería de Fotos (Múltiples JPG / PNG)", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
 
         col_sku_disp, col_bar_disp, col_img_disp = st.columns([1, 1, 1])
         with col_sku_disp:
@@ -219,29 +212,21 @@ with tab2:
             img_preview = generar_imagen_barcode_memoria(codigo_barras_calculado, float(p_venta), sel_prenda)
             st.image(img_preview, caption=f"Vista previa (${p_venta:.2f} MXN)", width=200)
 
-        boton_manual = st.form_submit_button("🚀 Guardar Producto y Subir Fotos a la Nube")
+        boton_manual = st.form_submit_button("🚀 Guardar Producto y Generar Historia")
         
         if boton_manual:
             if desc:
-                rutas_supabase = []
+                rutas_imagenes_relativas = []
                 if fotos_subidas:
-                    with st.spinner("Subiendo archivos fotográficos directo al bucket de Supabase Storage..."):
-                        for foto in fotos_subidas:
-                            files = {"file": (foto.name, foto.getvalue(), foto.type)}
-                            try:
-                                r_subida = requests.post(
-                                    f"{URL_FASTAPI_SUBIR_SUPABASE}?codigo={codigo_calculado}",
-                                    files=files,
-                                    headers=HEADERS
-                                )
-                                if r_subida.status_code == 200:
-                                    url_publica = r_subida.json().get("imagen_url")
-                                    if url_publica:
-                                        rutas_supabase.append(url_publica)
-                                else:
-                                    st.warning(f"⚠️ No se pudo subir {foto.name}: {r_subida.text}")
-                            except Exception as err_sub:
-                                st.error(f"Error de red al subir imagen: {err_sub}")
+                    for i, foto in enumerate(fotos_subidas):
+                        ext = foto.name.split(".")[-1]
+                        nombre_archivo = f"{codigo_calculado}_{i+1}.{ext}"
+                        ruta_fisica = os.path.join(DIR_IMAGENES, nombre_archivo)
+                        
+                        with open(ruta_fisica, "wb") as f:
+                            f.write(foto.getbuffer())
+                        
+                        rutas_imagenes_relativas.append(os.path.join("static", "imagenes", nombre_archivo).replace("\\", "/"))
 
                 payload = {
                     "codigo": codigo_calculado,
@@ -261,8 +246,8 @@ with tab2:
                     "corte": sel_corte.upper(),
                     "proveedor": sel_proveedor.upper(),
                     "talla": sel_talla.upper(),
-                    "imagen_url": rutas_supabase[0] if rutas_supabase else None,
-                    "imagenes": rutas_supabase
+                    "imagen_url": rutas_imagenes_relativas[0] if rutas_imagenes_relativas else None,
+                    "imagenes": rutas_imagenes_relativas
                 }
                 
                 try:
@@ -275,7 +260,7 @@ with tab2:
                         st.session_state["prenda_reciente"] = sel_prenda
                         st.session_state["barcode_reciente"] = codigo_barras_calculado
                         st.session_state["historia_reciente"] = resultado.get("historia", "")
-                        st.session_state["rutas_imgs_recientes"] = rutas_supabase
+                        st.session_state["rutas_imgs_recientes"] = rutas_imagenes_relativas
                         st.session_state["error_guardado"] = None
                     elif r.status_code == 400:
                         st.session_state["exito_guardado"] = False
@@ -304,9 +289,9 @@ with tab2:
         prenda_c = st.session_state["prenda_reciente"]
         bc_c = st.session_state["barcode_reciente"]
         
-        st.success(f"✅ ¡Producto [{sku_c}] guardado exitosamente con su galería en Supabase Storage!")
+        st.success(f"✅ ¡Producto [{sku_c}] guardado exitosamente con su galería!")
         if st.session_state.get("rutas_imgs_recientes"):
-            st.info(f"📷 URLs públicas en la nube registradas: `{len(st.session_state['rutas_imgs_recientes'])} archivos`")
+            st.info(f"📷 Imágenes almacenadas: `{len(st.session_state['rutas_imgs_recientes'])} archivos`")
         
         img_final = generar_imagen_barcode_memoria(bc_c, precio_c, prenda_c)
         st.download_button(
@@ -395,8 +380,8 @@ with tab3:
         st.error(f"Error al conectar con el API: {e}")
 
 with tab4:
-    st.subheader("🖼️ Galería Visual Cloud y Edición Fotográfica por SKU")
-    st.markdown("Utiliza este módulo para consultar las URLs públicas de Supabase Storage asociadas a cualquier prenda o añadir/reemplazar fotos.")
+    st.subheader("🖼️ Galería Visual y Edición Fotográfica por SKU")
+    st.markdown("Utiliza este módulo para consultar las imágenes actuales de cualquier prenda o añadir/reemplazar fotos.")
     
     sku_a_editar = st.text_input("Ingresa el código SKU exacto a actualizar:", placeholder="Ej. 3641741", key="input_sku_edit")
     
@@ -412,7 +397,7 @@ with tab4:
                     
                     fotos_actuales = prod_encontrado.get('imagenes', [])
                     if fotos_actuales:
-                        st.markdown(f"##### 📷 Galería fotográfica activa en la nube ({len(fotos_actuales)} fotos):")
+                        st.markdown(f"##### 📷 Galería fotográfica activa ({len(fotos_actuales)} fotos):")
                         cols_f = st.columns(min(len(fotos_actuales), 5))
                         for idx, f_url in enumerate(fotos_actuales):
                             with cols_f[idx % 5]:
@@ -421,7 +406,7 @@ with tab4:
                         st.info("ℹ️ Este producto no cuenta con fotos registradas en su galería actualmente.")
                     
                     st.divider()
-                    st.markdown("##### 📤 Cargar Nuevas Imágenes a Supabase Storage")
+                    st.markdown("##### 📤 Cargar Nuevas Imágenes")
                     
                     modo_actualizacion = st.radio(
                         "Acción a realizar con las fotos:",
@@ -437,49 +422,37 @@ with tab4:
                         key=f"uploader_{sku_a_editar}"
                     )
                     
-                    if st.button("🚀 Procesar Galería en la Nube", use_container_width=True):
+                    if st.button("🚀 Procesar Galería Fotográfica", use_container_width=True):
                         if nuevas_fotos_subidas:
                             rutas_nuevas = []
-                            with st.spinner("Subiendo nuevas imágenes al Bucket de Supabase..."):
-                                for foto in nuevas_fotos_subidas:
-                                    files = {"file": (foto.name, foto.getvalue(), foto.type)}
-                                    r_subida = requests.post(
-                                        f"{URL_FASTAPI_SUBIR_SUPABASE}?codigo={sku_a_editar}",
-                                        files=files,
-                                        headers=HEADERS
-                                    )
-                                    if r_subida.status_code == 200:
-                                        url_pub = r_subida.json().get("imagen_url")
-                                        if url_pub:
-                                            rutas_nuevas.append(url_pub)
-                                    else:
-                                        st.warning(f"⚠️ No se pudo subir {foto.name}: {r_subida.text}")
+                            offset_inicial = len(fotos_actuales) if "Agregar" in modo_actualizacion else 0
                             
-                            if rutas_nuevas:
-                                if "Agregar" in modo_actualizacion:
-                                    rutas_finales_envio = list(set(fotos_actuales + rutas_nuevas))
-                                    modo_api = "agregar"
-                                else:
-                                    rutas_finales_envio = rutas_nuevas
-                                    modo_api = "reemplazar"
-
-                                payload_update = {
-                                    "imagenes": rutas_finales_envio,
-                                    "modo": modo_api
-                                }
+                            for i, foto in enumerate(nuevas_fotos_subidas):
+                                ext = foto.name.split(".")[-1]
+                                nombre_archivo = f"{sku_a_editar}_{offset_inicial + i + 1}.{ext}"
+                                ruta_fisica = os.path.join(DIR_IMAGENES, nombre_archivo)
                                 
-                                url_up = f"{BASE_URL_RENDER}/actualizar-fotos/{sku_a_editar}"
-                                r_up = requests.put(url_up, json=payload_update, headers=HEADERS)
+                                with open(ruta_fisica, "wb") as f:
+                                    f.write(foto.getbuffer())
                                 
-                                if r_up.status_code == 200:
-                                    st.balloons()
-                                    res_json = r_up.json()
-                                    st.success(f"🎉 ¡Galería del SKU [{sku_a_editar}] actualizada exitosamente en Supabase!")
-                                    st.info(f"💡 Total de fotos en la galería activa: `{len(res_json.get('imagenes', []))}` fotos.")
-                                else:
-                                    st.error(f"Error {r_up.status_code}: {r_up.text}")
+                                rutas_nuevas.append(os.path.join("static", "imagenes", nombre_archivo).replace("\\", "/"))
+                            
+                            modo_api = "reemplazar" if "Reemplazar" in modo_actualizacion else "agregar"
+                            payload_update = {
+                                "imagenes": rutas_nuevas,
+                                "modo": modo_api
+                            }
+                            
+                            url_up = f"http://127.0.0.1:8000/actualizar-fotos/{sku_a_editar}"
+                            r_up = requests.put(url_up, json=payload_update, headers=HEADERS)
+                            
+                            if r_up.status_code == 200:
+                                st.balloons()
+                                res_json = r_up.json()
+                                st.success(f"🎉 ¡Galería del SKU [{sku_a_editar}] actualizada exitosamente!")
+                                st.info(f"💡 Total de fotos en la galería activa: `{len(res_json.get('imagenes', []))}` fotos.")
                             else:
-                                st.warning("⚠️ No se pudo procesar ninguna de las imágenes seleccionadas hacia Supabase.")
+                                st.error(f"Error {r_up.status_code}: {r_up.text}")
                         else:
                             st.warning("⚠️ Por favor sube al menos una imagen antes de procesar.")
                 else:
