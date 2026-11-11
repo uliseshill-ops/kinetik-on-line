@@ -28,6 +28,41 @@ except Exception:
 if not ADMIN_PASSWORD_REAL:
     ADMIN_PASSWORD_REAL = os.getenv("ADMIN_PASSWORD", "K1n31kPr0#$2026H3M!").strip()
 
+# ==============================================================================
+# 🔒 MURO DE SEGURIDAD / PASSWORD GATE PRO BLINDADO
+# ==============================================================================
+if "autenticado" not in st.session_state:
+    st.session_state["autenticado"] = False
+
+if not st.session_state["autenticado"]:
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    c_login1, c_login2, c_login3 = st.columns([1, 2, 1])
+    
+    with c_login2:
+        st.title("🔒 KINETIK Admin Panel")
+        st.subheader("Acceso Restringido - Control de Inventarios")
+        st.info("Ingresa la contraseña maestra para abrir la cabecera de control.")
+        
+        with st.form("form_login_maestro"):
+            password_input = st.text_input("Contraseña de Acceso:", type="password", placeholder="••••••••••••")
+            btn_login = st.form_submit_button("🔑 Entrar al Sistema", use_container_width=True)
+            
+            if btn_login:
+                pwd_ingresado = password_input.strip()
+                # Validación robusta: Acepta los secrets de la nube, la clave maestra o el token de API
+                if (pwd_ingresado == ADMIN_PASSWORD_REAL or 
+                    pwd_ingresado == "K1n31kPr0#$2026H3M!" or 
+                    pwd_ingresado == API_TOKEN):
+                    st.session_state["autenticado"] = True
+                    st.success("¡Acceso concedido! Entrando a la pista...")
+                    st.rerun()
+                else:
+                    st.error("🚫 Contraseña incorrecta, compa. Revisa bien la clave de acceso.")
+                    
+    st.stop()
+# ==============================================================================
+
+
 # Catálogos oficiales
 MAPEO_GENERO = {'MUJER': '1', 'HOMBRE': '2', 'UNISEX': '3'}
 MAPEO_TIPO_TELA = {
@@ -121,39 +156,7 @@ def generar_imagen_barcode_memoria(codigo_barras_str: str, precio_venta: float =
 # Configuración de Página Principal
 st.set_page_config(page_title="Hecho en México - Admin 2026", page_icon="🇲🇽", layout="wide")
 
-# ==============================================================================
-# 🔒 MURO DE SEGURIDAD / PASSWORD GATE PRO BLINDADO
-# ==============================================================================
-if "autenticado" not in st.session_state:
-    st.session_state["autenticado"] = False
 
-if not st.session_state["autenticado"]:
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    c_login1, c_login2, c_login3 = st.columns([1, 2, 1])
-    
-    with c_login2:
-        st.title("🔒 KINETIK Admin Panel")
-        st.subheader("Acceso Restringido - Control de Inventarios")
-        st.info("Ingresa la contraseña maestra para abrir la cabecera de control.")
-        
-        with st.form("form_login_maestro"):
-            password_input = st.text_input("Contraseña de Acceso:", type="password", placeholder="••••••••••••")
-            btn_login = st.form_submit_button("🔑 Entrar al Sistema", use_container_width=True)
-            
-            if btn_login:
-                pwd_ingresado = password_input.strip()
-                # Validación robusta: Acepta los secrets de la nube, la clave maestra o el token de API
-                if (pwd_ingresado == ADMIN_PASSWORD_REAL or 
-                    pwd_ingresado == "K1n31kPr0#$2026H3M!" or 
-                    pwd_ingresado == API_TOKEN):
-                    st.session_state["autenticado"] = True
-                    st.success("¡Acceso concedido! Entrando a la pista...")
-                    st.rerun()
-                else:
-                    st.error("🚫 Contraseña incorrecta, compa. Revisa bien la clave de acceso.")
-                    
-    st.stop()
-# ==============================================================================
 
 # --- CORE DEL PANEL DE CONTROL (SOLO VISIBLE SI ESTÁ AUTENTICADO) ---
 st.title("KINETIK Hecho en México - Panel de Control (Cloud Storage Supabase)")
