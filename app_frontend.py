@@ -16,6 +16,12 @@ URL_FASTAPI_CREAR = f"{BASE_URL_RENDER}/crear-producto/"
 URL_FASTAPI_LISTAR = f"{BASE_URL_RENDER}/productos/"
 URL_FASTAPI_SUBIR_SUPABASE = f"{BASE_URL_RENDER}/subir-imagen-supabase/"
 
+# --- OBTENCIÓN SEGURA DE LA CONTRASEÑA MAESTRA ---
+# Prioridad 1: Busca en st.secrets (Streamlit Cloud Secrets)
+# Prioridad 2: Busca en Variables de Entorno del sistema (Render / Local OS)
+# Prioridad 3: Respaldo de emergencia por si faltara configurar
+ADMIN_PASSWORD_REAL = st.secrets.get("ADMIN_PASSWORD") or os.getenv("ADMIN_PASSWORD") or "ulises_pro_2026"
+
 # Catálogos oficiales
 MAPEO_GENERO = {'MUJER': '1', 'HOMBRE': '2', 'UNISEX': '3'}
 MAPEO_TIPO_TELA = {
@@ -110,7 +116,7 @@ def generar_imagen_barcode_memoria(codigo_barras_str: str, precio_venta: float =
 st.set_page_config(page_title="Hecho en México - Admin 2026", page_icon="🇲🇽", layout="wide")
 
 # ==============================================================================
-# 🔒 MURO DE SEGURIDAD / PASSWORD GATE PRO
+# 🔒 MURO DE SEGURIDAD / PASSWORD GATE PRO (SECRETS READY)
 # ==============================================================================
 if "autenticado" not in st.session_state:
     st.session_state["autenticado"] = False
@@ -129,26 +135,24 @@ if not st.session_state["autenticado"]:
             btn_login = st.form_submit_button("🔑 Entrar al Sistema", use_container_width=True)
             
             if btn_login:
-                # Validamos contra la llave del Ferrari
-                if password_input == API_TOKEN:
+                # Compara contra la clave segura obtenida de los secrets o entorno
+                if password_input == ADMIN_PASSWORD_REAL:
                     st.session_state["autenticado"] = True
                     st.success("¡Acceso concedido! Entrando a la pista...")
                     st.rerun()
                 else:
                     st.error("🚫 Contraseña incorrecta, compa. Revisa bien la clave de acceso.")
                     
-    # Detenemos la renderización si el usuario no ha ingresado la contraseña correcta
+    # Frena la ejecución si no está autenticado
     st.stop()
 # ==============================================================================
 
-# --- CORE DEL PANEL DE CONTROL (SOLO VISIBLE SI ESTÁ AUTENTICADO) ---
+# --- CORE DEL PANEL DE CONTROL (SOLO VISIBLE SI ESTá AUTENTICADO) ---
 st.title("KINETIK Hecho en México - Panel de Control (Cloud Storage Supabase)")
 
-# Botón lateral/encabezado opcional para cerrar sesión si se requiere
 with st.sidebar:
     st.markdown("### 👤 Sesión Activa")
     st.write(f"**Usuario:** Admin Pro")
-    st.write(f"**Token Activo:** `...{API_TOKEN[-6:]}`")
     if st.button("🚪 Cerrar Sesión", use_container_width=True):
         st.session_state["autenticado"] = False
         st.rerun()
