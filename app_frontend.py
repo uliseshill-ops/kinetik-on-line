@@ -20,7 +20,11 @@ URL_FASTAPI_SUBIR_SUPABASE = f"{BASE_URL_RENDER}/subir-imagen-supabase/"
 # Prioridad 1: Busca en st.secrets (Streamlit Cloud Secrets)
 # Prioridad 2: Busca en Variables de Entorno del sistema (Render / Local OS)
 # Prioridad 3: Respaldo de emergencia por si faltara configurar
-ADMIN_PASSWORD_REAL = st.secrets.get("ADMIN_PASSWORD") or os.getenv("ADMIN_PASSWORD") or "ulises_pro_2026"
+#ADMIN_PASSWORD_REAL = st.secrets.get("ADMIN_PASSWORD") or os.getenv("ADMIN_PASSWORD") or "ulises_pro_2026"
+try:
+    ADMIN_PASSWORD_REAL = st.secrets.get("ADMIN_PASSWORD") or os.getenv("ADMIN_PASSWORD") or "ulises_pro_2026"
+except Exception:
+    ADMIN_PASSWORD_REAL = os.getenv("ADMIN_PASSWORD") or "ulises_pro_2026"
 
 # Catálogos oficiales
 MAPEO_GENERO = {'MUJER': '1', 'HOMBRE': '2', 'UNISEX': '3'}
