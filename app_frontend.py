@@ -16,20 +16,31 @@ URL_FASTAPI_CREAR = f"{BASE_URL_RENDER}/crear-producto/"
 URL_FASTAPI_LISTAR = f"{BASE_URL_RENDER}/productos/"
 URL_FASTAPI_SUBIR_SUPABASE = f"{BASE_URL_RENDER}/subir-imagen-supabase/"
 
-# --- OBTENCIÓN ULTRA-ROBUSTA DE LA CONTRASEÑA MAESTRA ---
+# ==============================================================================
+# 🔒 CONTROL DE SEGURIDAD EXCLUSIVO EN LA NUBE (RENDER)
+# ==============================================================================
 ADMIN_PASSWORD_REAL = None
 
-try:
-    if "ADMIN_PASSWORD" in st.secrets:
-        ADMIN_PASSWORD_REAL = str(st.secrets["ADMIN_PASSWORD"]).strip()
-except Exception:
-    pass
+# 1. Intentar leer desde las Variables de Entorno nativas de Render
+ADMIN_PASSWORD_REAL = os.environ.get("ADMIN_PASSWORD")
 
+# 2. Respaldo alternativo exclusivo de la plataforma Streamlit Secrets si se requiere
 if not ADMIN_PASSWORD_REAL:
-    ADMIN_PASSWORD_REAL = os.getenv("ADMIN_PASSWORD", "K1n31kPr0#$2026H3M!").strip()
+    try:
+        if "ADMIN_PASSWORD" in st.secrets:
+            ADMIN_PASSWORD_REAL = str(st.secrets["ADMIN_PASSWORD"]).strip()
+    except Exception:
+        pass
+
+# Limpieza estricta de espacios en blanco
+if ADMIN_PASSWORD_REAL:
+    ADMIN_PASSWORD_REAL = ADMIN_PASSWORD_REAL.strip()
+
+# Configuración de Página Principal
+st.set_page_config(page_title="Hecho en México - Admin 2026", page_icon="🇲🇽", layout="wide")
 
 # ==============================================================================
-# 🔒 MURO DE SEGURIDAD / PASSWORD GATE PRO BLINDADO
+# 🛡️ MURO DE SEGURIDAD / PASSWORD GATE PRO (PRODUCCIÓN CLOUD)
 # ==============================================================================
 if "autenticado" not in st.session_state:
     st.session_state["autenticado"] = False
@@ -41,25 +52,30 @@ if not st.session_state["autenticado"]:
     with c_login2:
         st.title("🔒 KINETIK Admin Panel")
         st.subheader("Acceso Restringido - Control de Inventarios")
+        
+        # Validación crítica: Si Render no tiene la variable configurada, bloquea por seguridad
+        if not ADMIN_PASSWORD_REAL:
+            st.error("🚨 Error del Sistema: La variable de entorno 'ADMIN_PASSWORD' no está configurada en el servidor de Render.")
+            st.stop()
+            
         st.info("Ingresa la contraseña maestra para abrir la cabecera de control.")
         
-        with st.form("form_login_maestro"):
+        with st.form("form_login_maestro", clear_on_submit=False):
             password_input = st.text_input("Contraseña de Acceso:", type="password", placeholder="••••••••••••")
             btn_login = st.form_submit_button("🔑 Entrar al Sistema", use_container_width=True)
             
             if btn_login:
                 pwd_ingresado = password_input.strip()
-                # Validación robusta: Acepta los secrets de la nube, la clave maestra o el token de API
-                if (pwd_ingresado == ADMIN_PASSWORD_REAL or 
-                    pwd_ingresado == "K1n31kPr0#$2026H3M!" or 
-                    pwd_ingresado == API_TOKEN):
+                
+                # Validación directa y estricta contra las variables del servidor
+                if pwd_ingresado == ADMIN_PASSWORD_REAL or pwd_ingresado == API_TOKEN:
                     st.session_state["autenticado"] = True
                     st.success("¡Acceso concedido! Entrando a la pista...")
                     st.rerun()
                 else:
-                    st.error("🚫 Contraseña incorrecta, compa. Revisa bien la clave de acceso.")
+                    st.error("🚫 Contraseña incorrecta. Revisa la clave de acceso configurada en el panel de Render.")
                     
-    st.stop()
+    st.stop() # Detiene por completo la carga de los componentes inferiores del inventario
 # ==============================================================================
 
 
