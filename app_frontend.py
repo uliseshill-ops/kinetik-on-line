@@ -161,12 +161,12 @@ def generar_imagen_barcode_memoria(codigo_barras_str: str, precio_venta: float =
 
 
 # --- CORE DEL PANEL DE CONTROL (SOLO VISIBLE SI ESTÁ AUTENTICADO) ---
-st.title("KINETIK Hecho en México - Panel de Control (Cloud Storage Supabase)")
+st.title("KINETIK Hecho en México - Panel de Control (Cloud Storage)")
 
 with st.sidebar:
     st.markdown("### 👤 Sesión Activa")
     st.write(f"**Usuario:** Admin Pro")
-    st.write(f"**Token Activo:** `...{admin_password[-17:]}`")
+    st.write(f"**Token Activo:** `...{admin_password[-3:]}`")
     if st.button("🚪 Cerrar Sesión", use_container_width=True):
         st.session_state["autenticado"] = False
         st.rerun()
