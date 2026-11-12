@@ -58,7 +58,7 @@ if not st.session_state["autenticado"]:
                 pwd_ingresado = password_input.strip()
                 
                 # Comparar lo tecleado con el dato obtenido de Render
-                if pwd_ingresado == admin_password or pwd_ingresado == API_TOKEN:
+                if pwd_ingresado == admin_password:
                     st.session_state["autenticado"] = True
                     st.success("¡Acceso concedido! Entrando a la pista...")
                     st.rerun()
@@ -166,7 +166,7 @@ st.title("KINETIK Hecho en México - Panel de Control (Cloud Storage Supabase)")
 with st.sidebar:
     st.markdown("### 👤 Sesión Activa")
     st.write(f"**Usuario:** Admin Pro")
-    st.write(f"**Token Activo:** `...{API_TOKEN[-6:]}`")
+    st.write(f"**Token Activo:** `...{admin_password[-17:]}`")
     if st.button("🚪 Cerrar Sesión", use_container_width=True):
         st.session_state["autenticado"] = False
         st.rerun()
