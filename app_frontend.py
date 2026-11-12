@@ -40,17 +40,17 @@ if not st.session_state["autenticado"]:
     
     with c_login2:
         st.title("🔒 KINETIK Admin Panel")
-        st.subheader("Acceso Restringido - Modo Auditoría")
+        st.subheader("Acceso Restringido - Modo Admin")
         
         # 2. Imprimir en la página el dato obtenido de ADMIN_PASSWORD para verificarlo visualmente
-        st.warning(f"🔍 **[DEBUG RENDER]** Valor recuperado en `ADMIN_PASSWORD`: `{admin_password}`")
+        #st.warning(f"🔍 **[DEBUG RENDER]** Valor recuperado en `ADMIN_PASSWORD`: `{admin_password}`")
         
         # Validación crítica por si la variable viene vacía
         if not admin_password:
             st.error("🚨 Error del Sistema: La variable de entorno 'ADMIN_PASSWORD' está vacía o no configurada en Render.")
             st.stop()
             
-        st.info("Copia el valor de arriba, pégalo en la casilla y dale acceso al sistema.")
+        #st.info("Copia el valor de arriba, pégalo en la casilla y dale acceso al sistema.")
         
         with st.form("form_login_maestro", clear_on_submit=False):
             # 3. Casilla para teclear el password (tipo default para ver los caracteres claramente durante la prueba)
