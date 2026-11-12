@@ -7,6 +7,7 @@ from barcode.writer import ImageWriter
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
 import os
+from dotenv import load_dotenv
 
 # --- CONFIGURACIÓN Y SEGURIDAD PRODUCCIÓN (RENDER / SUPABASE STORAGE) ---
 API_TOKEN = "ulises_pro_2026"
