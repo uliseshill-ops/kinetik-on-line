@@ -18,36 +18,18 @@ URL_FASTAPI_LISTAR = f"{BASE_URL_RENDER}/productos/"
 URL_FASTAPI_SUBIR_SUPABASE = f"{BASE_URL_RENDER}/subir-imagen-supabase/"
 
 # ==============================================================================
-# 🔒 CONTROL DE SEGURIDAD EXCLUSIVO EN LA NUBE (RENDER)
+# 🔒 CONTROL DE SEGURIDAD Y AUDITORÍA EN LA NUBE (RENDER)
 # ==============================================================================
-# Cargamos el .env si estamos en local; en la nube (Render) leerá las variables de entorno del sistema
 load_dotenv()
 
-
-
-ADMIN_PASSWORD_REAL = None
-
-# 1. Intentar leer desde las Variables de Entorno nativas de Render
-#ADMIN_PASSWORD_REAL = os.environ.get("ADMIN_PASSWORD")
+# 1. Obtenemos el valor exacto de ADMIN_PASSWORD desde las variables de entorno de Render
 admin_password = os.getenv("ADMIN_PASSWORD")
-
-# 2. Respaldo alternativo exclusivo de la plataforma Streamlit Secrets si se requiere
-#if not ADMIN_PASSWORD_REAL:
-#    try:
-#        if "ADMIN_PASSWORD" in st.secrets:
-#            ADMIN_PASSWORD_REAL = str(st.secrets["ADMIN_PASSWORD"]).strip()
-#    except Exception:
-#        pass
-
-# Limpieza estricta de espacios en blanco
-#if ADMIN_PASSWORD_REAL:
-#    ADMIN_PASSWORD_REAL = ADMIN_PASSWORD_REAL.strip()
 
 # Configuración de Página Principal
 st.set_page_config(page_title="Hecho en México - Admin 2026", page_icon="🇲🇽", layout="wide")
 
 # ==============================================================================
-# 🛡️ MURO DE SEGURIDAD / PASSWORD GATE PRO (PRODUCCIÓN CLOUD)
+# 🛡️ MURO DE SEGURIDAD / PASSWORD GATE PRO (MODO TEST / DEBUG)
 # ==============================================================================
 if "autenticado" not in st.session_state:
     st.session_state["autenticado"] = False
@@ -58,31 +40,35 @@ if not st.session_state["autenticado"]:
     
     with c_login2:
         st.title("🔒 KINETIK Admin Panel")
-        st.subheader("Acceso Restringido - Control de Inventarios")
+        st.subheader("Acceso Restringido - Modo Auditoría")
         
-        # Validación crítica: Si Render no tiene la variable configurada, bloquea por seguridad
+        # 2. Imprimir en la página el dato obtenido de ADMIN_PASSWORD para verificarlo visualmente
+        st.warning(f"🔍 **[DEBUG RENDER]** Valor recuperado en `ADMIN_PASSWORD`: `{admin_password}`")
+        
+        # Validación crítica por si la variable viene vacía
         if not admin_password:
-            st.error("🚨 Error del Sistema: La variable de entorno 'ADMIN_PASSWORD' no está configurada en el servidor de Render.")
+            st.error("🚨 Error del Sistema: La variable de entorno 'ADMIN_PASSWORD' está vacía o no configurada en Render.")
             st.stop()
             
-        st.info("Ingresa la contraseña maestra para abrir la cabecera de control.")
+        st.info("Copia el valor de arriba, pégalo en la casilla y dale acceso al sistema.")
         
         with st.form("form_login_maestro", clear_on_submit=False):
-            password_input = st.text_input("Contraseña de Acceso:", type="password", placeholder="••••••••••••")
+            # 3. Casilla para teclear el password (tipo default para ver los caracteres claramente durante la prueba)
+            password_input = st.text_input("Contraseña de Acceso (Modo Visible):", type="default", placeholder="Pega aquí el password de Render")
             btn_login = st.form_submit_button("🔑 Entrar al Sistema", use_container_width=True)
             
             if btn_login:
                 pwd_ingresado = password_input.strip()
                 
-                # Validación directa y estricta contra las variables del servidor
+                # 4. Comparar lo tecleado con el dato obtenido de Render
                 if pwd_ingresado == admin_password or pwd_ingresado == API_TOKEN:
                     st.session_state["autenticado"] = True
                     st.success("¡Acceso concedido! Entrando a la pista...")
                     st.rerun()
                 else:
-                    st.error("🚫 Contraseña incorrecta. Revisa la clave de acceso configurada en el panel de Render.")
+                    st.error(f"🚫 Contraseña incorrecta. Escribiste '{pwd_ingresado}' y se comparó con '{admin_password}'.")
                     
-    st.stop() # Detiene por completo la carga de los componentes inferiores del inventario
+    st.stop() # Frena la ejecución si no está autenticado
 # ==============================================================================
 
 
@@ -175,10 +161,6 @@ def generar_imagen_barcode_memoria(codigo_barras_str: str, precio_venta: float =
     img_final.save(buffer_out, format="PNG")
     buffer_out.seek(0)
     return buffer_out
-
-# Configuración de Página Principal
-st.set_page_config(page_title="Hecho en México - Admin 2026", page_icon="🇲🇽", layout="wide")
-
 
 
 # --- CORE DEL PANEL DE CONTROL (SOLO VISIBLE SI ESTÁ AUTENTICADO) ---
@@ -512,7 +494,7 @@ with tab4:
                             else:
                                 st.warning("⚠️ No se pudo procesar ninguna de las imágenes seleccionadas hacia Supabase.")
                         else:
-                            st.warning("⚠️ Por favor sube al menos una imagen antes de procesar.")
+                            st.warning("⚠️ Por favor sube al menos una imagen antes de procesarພັນ.")
                 else:
                     st.warning(f"⚠️ No se encontró ninguna prenda registrada con el SKU '{sku_a_editar}'.")
         except Exception as e:
