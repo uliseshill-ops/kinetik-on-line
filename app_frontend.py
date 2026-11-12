@@ -19,22 +19,28 @@ URL_FASTAPI_SUBIR_SUPABASE = f"{BASE_URL_RENDER}/subir-imagen-supabase/"
 # ==============================================================================
 # 🔒 CONTROL DE SEGURIDAD EXCLUSIVO EN LA NUBE (RENDER)
 # ==============================================================================
+# Cargamos el .env si estamos en local; en la nube (Render) leerá las variables de entorno del sistema
+load_dotenv()
+
+
+
 ADMIN_PASSWORD_REAL = None
 
 # 1. Intentar leer desde las Variables de Entorno nativas de Render
-ADMIN_PASSWORD_REAL = os.environ.get("ADMIN_PASSWORD")
+#ADMIN_PASSWORD_REAL = os.environ.get("ADMIN_PASSWORD")
+admin_password = os.getenv("ADMIN_PASSWORD")
 
 # 2. Respaldo alternativo exclusivo de la plataforma Streamlit Secrets si se requiere
-if not ADMIN_PASSWORD_REAL:
-    try:
-        if "ADMIN_PASSWORD" in st.secrets:
-            ADMIN_PASSWORD_REAL = str(st.secrets["ADMIN_PASSWORD"]).strip()
-    except Exception:
-        pass
+#if not ADMIN_PASSWORD_REAL:
+#    try:
+#        if "ADMIN_PASSWORD" in st.secrets:
+#            ADMIN_PASSWORD_REAL = str(st.secrets["ADMIN_PASSWORD"]).strip()
+#    except Exception:
+#        pass
 
 # Limpieza estricta de espacios en blanco
-if ADMIN_PASSWORD_REAL:
-    ADMIN_PASSWORD_REAL = ADMIN_PASSWORD_REAL.strip()
+#if ADMIN_PASSWORD_REAL:
+#    ADMIN_PASSWORD_REAL = ADMIN_PASSWORD_REAL.strip()
 
 # Configuración de Página Principal
 st.set_page_config(page_title="Hecho en México - Admin 2026", page_icon="🇲🇽", layout="wide")
@@ -54,7 +60,7 @@ if not st.session_state["autenticado"]:
         st.subheader("Acceso Restringido - Control de Inventarios")
         
         # Validación crítica: Si Render no tiene la variable configurada, bloquea por seguridad
-        if not ADMIN_PASSWORD_REAL:
+        if not admin_password:
             st.error("🚨 Error del Sistema: La variable de entorno 'ADMIN_PASSWORD' no está configurada en el servidor de Render.")
             st.stop()
             
@@ -68,7 +74,7 @@ if not st.session_state["autenticado"]:
                 pwd_ingresado = password_input.strip()
                 
                 # Validación directa y estricta contra las variables del servidor
-                if pwd_ingresado == ADMIN_PASSWORD_REAL or pwd_ingresado == API_TOKEN:
+                if pwd_ingresado == admin_password or pwd_ingresado == API_TOKEN:
                     st.session_state["autenticado"] = True
                     st.success("¡Acceso concedido! Entrando a la pista...")
                     st.rerun()
