@@ -25,8 +25,34 @@ load_dotenv()
 # 1. Obtenemos el valor exacto de ADMIN_PASSWORD desde las variables de entorno de Render
 admin_password = os.getenv("ADMIN_PASSWORD")
 
-# Configuración de Página Principal
+# Configuración de Página Principal y Estilos CSS Pro (Tamaño uniforme de fotos)
 st.set_page_config(page_title="Hecho en México - Admin 2026", page_icon="🇲🇽", layout="wide")
+
+st.markdown("""
+    <style>
+    .card-precio {
+        font-size: 26px;
+        font-weight: bold;
+        color: #2E7D32;
+    }
+    .badge-sku {
+        background-color: #E0E0E0;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 13px;
+        font-weight: bold;
+        color: #333333;
+    }
+    /* --- CORRECCIÓN DE TAMAÑO UNIFORME PARA GALERÍA DE FOTOS EN ADMIN --- */
+    [data-testid="stImage"] img {
+        height: 380px !important;
+        width: 100% !important;
+        object-fit: cover !important;
+        object-position: center top !important;
+        border-radius: 8px;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 # ==============================================================================
 # 🛡️ MURO DE SEGURIDAD / PASSWORD GATE PRO
@@ -212,7 +238,7 @@ with tab2:
             p_costo = st.number_input("Precio Costo ($MXN)", min_value=0.0, step=5.0)
             p_venta = st.number_input("Precio Venta Público ($MXN)", min_value=0.0, step=5.0)
             p_may = st.number_input("Precio Mayoreo ($MXN)", min_value=0.0, step=5.0)
-            t_likes = st.number_input("Total de Likes Iniciales", min_value=0, step=1, value=0) # <--- CAMPO INICIAL DE LIKES
+            t_likes = st.number_input("Total de Likes Iniciales", min_value=0, step=1, value=0)
         with c2:
             dep = st.text_input("Departamento / Sección", value=sel_genero, placeholder="Ej: HOMBRE / DEPORTES")
             exi = st.number_input("Existencia en Tienda", min_value=1, step=1, value=1)
@@ -272,7 +298,7 @@ with tab2:
                     "corte": sel_corte.upper(),
                     "proveedor": sel_proveedor.upper(),
                     "talla": sel_talla.upper(),
-                    "total_likes": int(t_likes), # <--- SE INCLUYE EL CONTEO EN EL PAYLOAD
+                    "total_likes": int(t_likes),
                     "imagen_url": rutas_supabase[0] if rutas_supabase else None,
                     "imagenes": rutas_supabase
                 }
@@ -342,7 +368,6 @@ with tab3:
                 
                 # --- ORDENAMIENTO Y VISUALIZACIÓN INCLUYENDO TOTAL LIKES ---
                 if 'total_likes' in df.columns:
-                    # Movemos total_likes a una posición estratégica para el análisis
                     cols = list(df.columns)
                     if 'existencia' in cols:
                         idx_exi = cols.index('existencia')
@@ -433,7 +458,6 @@ with tab4:
                 if prod_encontrado:
                     st.success(f"✅ Prenda Encontrada: **{prod_encontrado.get('prenda')}** - {prod_encontrado.get('descripcion_original')}")
                     
-                    # Métrica rápida de likes en la vista de edición
                     st.info(f"❤️ Este producto cuenta con **{prod_encontrado.get('total_likes', 0)} likes** registrados en la tienda.")
                     
                     fotos_actuales = prod_encontrado.get('imagenes', [])
