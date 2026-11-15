@@ -13,7 +13,7 @@ models.Base.metadata.create_all(bind=engine)
 app = FastAPI(
     title="Hecho en México API - E-commerce Engine",
     description="Backend optimizado para inventarios KINETIK con IA e integración de Supabase Storage",
-    version="3.2.1"
+    version="3.3.0"
 )
 
 API_SECRET_KEY = os.getenv("API_SECRET_KEY", "ulises_pro_2026")
@@ -56,6 +56,7 @@ class ProductoSchema(BaseModel):
     codigo_barras: Optional[str] = None
     columna: Optional[str] = None
     caja: Optional[str] = None
+    total_likes: Optional[int] = 0  # <--- ¡ NUEVO CAMPO AÑADIDO PARA LA ANALÍTICA DE LIKES !
 
 @app.post("/subir-imagen-supabase/")
 async def subir_imagen_supabase(
@@ -147,7 +148,30 @@ def crear_producto(
         "mensaje": "¡Producto con galería en Supabase guardado exitosamente!", 
         "codigo": nuevo_producto.codigo, 
         "historia": historia,
-        "imagenes": urls_a_guardar
+        "imagenes": urls_a_guardar,
+        "total_likes": nuevo_producto.total_likes
+    }
+
+# <--- ¡ NUEVO ENDPOINT PARA CONTABILIZAR Y DAR LIKE DESDE LA TIENDA ! --->
+@app.post("/productos/{codigo}/like")
+def dar_like_producto(codigo: str, db: Session = Depends(get_db)):
+    producto = db.query(models.ProductoDB).filter(models.ProductoDB.codigo == codigo).first()
+    
+    if not producto:
+        raise HTTPException(status_code=404, detail=f"El producto con código '{codigo}' no existe, compa.")
+    
+    # Incrementamos el contador de likes de forma segura en la BD
+    if producto.total_likes is None:
+        producto.total_likes = 0
+    producto.total_likes += 1
+    
+    db.commit()
+    db.refresh(producto)
+    
+    return {
+        "mensaje": "¡Like registrado con éxito!",
+        "codigo": producto.codigo,
+        "total_likes": producto.total_likes
     }
 
 @app.put("/actualizar-fotos/{codigo}")
@@ -166,7 +190,6 @@ def actualizar_fotos(
         raise HTTPException(status_code=404, detail=f"El producto con código '{codigo}' no existe.")
     
     try:
-        # Consultamos explícitamente las imágenes asociadas en la tabla relacional
         imagenes_existentes_db = db.query(models.ProductoImagenDB).filter(
             models.ProductoImagenDB.codigo == codigo
         ).all()

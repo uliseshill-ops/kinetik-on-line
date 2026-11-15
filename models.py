@@ -17,6 +17,9 @@ class ProductoDB(Base):
     inventario_minimo = Column(Integer, default=0)
     inventario_maximo = Column(Integer, default=0)
     
+    # Columna nueva para analítica e interacción de la tienda
+    total_likes = Column(Integer, default=0) # <--- ¡AQUÍ ESTÁ EL NUEVO CAMPO DE LIKES!
+    
     # Columnas complementarias y de galería que exige el main.py
     imagen_url = Column(String, nullable=True)
     genero = Column(String, nullable=True)

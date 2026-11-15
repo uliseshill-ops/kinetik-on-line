@@ -212,6 +212,7 @@ with tab2:
             p_costo = st.number_input("Precio Costo ($MXN)", min_value=0.0, step=5.0)
             p_venta = st.number_input("Precio Venta Público ($MXN)", min_value=0.0, step=5.0)
             p_may = st.number_input("Precio Mayoreo ($MXN)", min_value=0.0, step=5.0)
+            t_likes = st.number_input("Total de Likes Iniciales", min_value=0, step=1, value=0) # <--- CAMPO INICIAL DE LIKES
         with c2:
             dep = st.text_input("Departamento / Sección", value=sel_genero, placeholder="Ej: HOMBRE / DEPORTES")
             exi = st.number_input("Existencia en Tienda", min_value=1, step=1, value=1)
@@ -271,6 +272,7 @@ with tab2:
                     "corte": sel_corte.upper(),
                     "proveedor": sel_proveedor.upper(),
                     "talla": sel_talla.upper(),
+                    "total_likes": int(t_likes), # <--- SE INCLUYE EL CONTEO EN EL PAYLOAD
                     "imagen_url": rutas_supabase[0] if rutas_supabase else None,
                     "imagenes": rutas_supabase
                 }
@@ -338,6 +340,15 @@ with tab3:
             if datos:
                 df = pd.DataFrame(datos)
                 
+                # --- ORDENAMIENTO Y VISUALIZACIÓN INCLUYENDO TOTAL LIKES ---
+                if 'total_likes' in df.columns:
+                    # Movemos total_likes a una posición estratégica para el análisis
+                    cols = list(df.columns)
+                    if 'existencia' in cols:
+                        idx_exi = cols.index('existencia')
+                        cols.insert(idx_exi, cols.pop(cols.index('total_likes')))
+                        df = df[cols]
+                
                 st.markdown("### 🔍 Buscador Inteligente de Prendas")
                 c_busq1, c_busq2 = st.columns([2, 1])
                 with c_busq1:
@@ -379,6 +390,7 @@ with tab3:
                     p_venta_val = float(prod_row.get('precio_venta', 0.0))
                     prenda_val = str(prod_row.get('prenda', ''))
                     desc_val = str(prod_row.get('descripcion_original', ''))
+                    likes_val = int(prod_row.get('total_likes', 0))
                     
                     bc_val = calcular_codigo_barras_pos(sku_elegido)
                     
@@ -397,6 +409,7 @@ with tab3:
                         st.markdown(f"**Prenda:** {prenda_val}")
                         st.markdown(f"**Descripción:** {desc_val}")
                         st.markdown(f"**Precio Público:** ${p_venta_val:,.2f} MXN")
+                        st.markdown(f"**❤️ Total de Likes (Engagement):** `{likes_val}` interacciones")
                         st.markdown(f"**Código EAN-13 Calculado:** `{bc_val}`")
                         st.success("💡 ¡Listo para escanear en caja o mandar a imprimir para etiquetar tus prendas en tienda!")
             else:
@@ -419,6 +432,9 @@ with tab4:
                 
                 if prod_encontrado:
                     st.success(f"✅ Prenda Encontrada: **{prod_encontrado.get('prenda')}** - {prod_encontrado.get('descripcion_original')}")
+                    
+                    # Métrica rápida de likes en la vista de edición
+                    st.info(f"❤️ Este producto cuenta con **{prod_encontrado.get('total_likes', 0)} likes** registrados en la tienda.")
                     
                     fotos_actuales = prod_encontrado.get('imagenes', [])
                     if fotos_actuales:

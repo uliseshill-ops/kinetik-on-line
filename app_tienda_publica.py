@@ -67,9 +67,6 @@ st.title("KINETIK Hecho en México - Colección Oficial")
 st.markdown("#### *Ropa y moda textil de alta resistencia. ¡Calidad 100% Mexicana!*")
 st.divider()
 
-if "likes" not in st.session_state:
-    st.session_state.likes = {}
-
 def construir_url_imagen(ruta_raw: str) -> str:
     """Convierte una ruta local o limpia en una URL remota válida en Render."""
     if not ruta_raw or str(ruta_raw).strip().lower() in ["nan", "none", ""]:
@@ -120,6 +117,9 @@ try:
                 precio_v = float(row.get('precio_venta', 0.0))
                 color_p = str(row.get('color', 'N/A'))
                 historia = str(row.get('historia_ia', 'Calidad textil garantizada.'))
+                
+                # Obtenemos los likes directamente de la base de datos (con fallback a 0)
+                num_likes = int(row.get('total_likes', 0))
                 
                 # Extracción robusta de imágenes (Manejo de string lista de Python desde CSV)
                 raw_imgs = row.get('imagenes', [])
@@ -177,15 +177,26 @@ try:
                         with st.expander("📖 Storytelling de la Prenda"):
                             st.write(historia)
                         
-                        num_likes = st.session_state.likes.get(codigo_sku, 0)
+                        # --- BOTÓN DE LIKE CONECTADO AL BACKEND ---
                         btn_like = st.button(f"❤️ Me Gusta ({num_likes})", key=f"like_{codigo_sku}_{idx}")
                         
                         if btn_like:
-                            st.session_state.likes[codigo_sku] = num_likes + 1
-                            st.rerun()
+                            try:
+                                # Petición POST al endpoint del backend para registrar el like de forma persistente
+                                url_like = f"{URL_BASE_RENDER}/productos/{codigo_sku}/like"
+                                response_like = requests.post(url_like)
+                                
+                                if response_like.status_code == 200:
+                                    st.success("🔥 ¡Like registrado en la base de datos, compa!")
+                                    st.rerun() # Recargamos para refrescar el contador oficial de la BD
+                                else:
+                                    st.error(f"⚠️ No se pudo registrar el like: {response_like.text}")
+                            except Exception as err_like:
+                                st.error(f"Error de conexión al dar like: {err_like}")
 
-                        if st.session_state.likes.get(codigo_sku, 0) > 0:
-                            st.success("🔥 ¡Excelente elección, compa!")
+                        # Si el producto ya tiene likes acumulados, mostramos el botón de WhatsApp directo
+                        if num_likes > 0:
+                            st.success("🔥 ¡Prenda con alta demanda en la tienda!")
                             mensaje_wa = f"¡Hola! Me gustó mucho la prenda SKU: {codigo_sku} ({desc_orig}) con precio de ${precio_v:.2f} MXN. Quisiera ponerme en contacto con ventas para realizar mi compra."
                             url_wa = f"https://wa.me/{NUMERO_VENTAS_WHATSAPP}?text={quote(mensaje_wa)}"
                             
