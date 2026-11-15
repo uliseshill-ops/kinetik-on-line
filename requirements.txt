@@ -1,0 +1,16 @@
+fastapi
+uvicorn
+sqlalchemy
+pydantic
+pandas
+requests
+psycopg2-binary
+supabase
+python-multipart
+streamlit
+requests
+pandas
+python-barcode
+sqlalchemy
+python-dotenv
+groq
