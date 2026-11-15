@@ -16,7 +16,7 @@ PLACEHOLDER_OFICIAL = "https://via.placeholder.com/400x300/2E7D32/FFFFFF.png?tex
 
 st.set_page_config(page_title="Hecho en México - KINETIK Tienda Oficial", page_icon="🇲🇽", layout="wide")
 
-# Estilos CSS comerciales de alta gama
+# Estilos CSS comerciales de alta gama + Normalización de tamaño de fotos
 st.markdown("""
     <style>
     .card-precio {
@@ -31,6 +31,14 @@ st.markdown("""
         font-size: 13px;
         font-weight: bold;
         color: #333333;
+    }
+    /* --- CORRECCIÓN DE TAMAÑO UNIFORME PARA GALERÍA DE FOTOS --- */
+    [data-testid="stImage"] img {
+        height: 380px !important;
+        width: 100% !important;
+        object-fit: cover !important;
+        object-position: center top !important;
+        border-radius: 8px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -118,7 +126,7 @@ try:
                 color_p = str(row.get('color', 'N/A'))
                 historia = str(row.get('historia_ia', 'Calidad textil garantizada.'))
                 
-                # Obtenemos los likes directamente de la base de datos (con fallback a 0)
+                # Obtenemos los likes directamente de la base de datos (con fallback al esquema)
                 num_likes = int(row.get('total_likes', 0))
                 
                 # Extracción robusta de imágenes (Manejo de string lista de Python desde CSV)
@@ -148,7 +156,7 @@ try:
 
                 with cols[idx % 3]:
                     with st.container(border=True):
-                        # --- GALERÍA FOTOGRÁFICA (BLINDADA AL 100%) ---
+                        # --- GALERÍA FOTOGRÁFICA (BLINDADA Y ESTANDARIZADA) ---
                         if lista_imagenes_limpia:
                             if len(lista_imagenes_limpia) > 1:
                                 nombres_pestanas = [f"Foto {i+1}" for i in range(len(lista_imagenes_limpia))]
