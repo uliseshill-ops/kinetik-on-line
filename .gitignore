@@ -1,0 +1,12 @@
+# Entornos y credenciales
+.env
+.env.*
+test_groq*.py
+ai_helper*.py
+app_frontend*.py
+*.pdf
+*.txt
+*.csv
+*.db
+__pycache__/
+*.py[cod]

@@ -1,0 +1,65 @@
+import os
+from groq import Groq
+from dotenv import load_dotenv
+
+# Cargamos el .env si estamos en local; en la nube (Render) leerá las variables de entorno del sistema
+load_dotenv()
+
+def generar_storytelling_mexicano(nombre_producto, descripcion_corta, estado_origen):
+    # Inicializamos el cliente oficial de Groq leyendo la llave directamente del entorno del servidor
+    api_key = os.getenv("GROQ_API_KEY")
+    
+    if not api_key:
+        print("🛑 Alerta: GROQ_API_KEY no detectada en el servidor.")
+        return "[ESPAÑOL]\nPrenda exclusiva Hecho en México. (Error: Falta configurar GROQ_API_KEY en la nube)\n\n[ENGLISH]\nExclusive product Made in Mexico."
+
+    client = Groq(api_key=api_key)
+    
+    prompt = f"""
+    Eres un experto en marketing internacional de ropa deportiva y cultura mexicana. 
+    Producto: {descripcion_corta}
+    Origen: {estado_origen}
+    Descripción: {nombre_producto}
+    
+    Genera dos historias cautivadoras para el producto.
+    
+    ESTRUCTURA REQUERIDA:
+    [ESPAÑOL]
+    Crea una descripción emocional y profesional de 1 párrafos que resalte 
+    la calidad de lo 'Hecho en México' y la tradición de {estado_origen}.
+    
+    [ENGLISH]
+    (Translate the same story into professional, high-end marketing English)
+    
+    REGLAS:
+    - No uses más de 2 párrafos en total.
+    - Mantén el tono artesanal y premium.
+    """
+    
+    try:
+        # Petición directa a la API de Groq en la nube con el modelo qwen/qwen3.8-27b
+        completion = client.chat.completions.create(
+            model="qwen/qwen3.8-27b",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Eres un redactor experto en marketing de moda y cultura mexicana de lujo."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            temperature=0.7,
+            max_tokens=800,
+        )
+        
+        respuesta_texto = completion.choices[0].message.content
+        if respuesta_texto and respuesta_texto.strip():
+            return respuesta_texto.strip()
+        else:
+            return "[ESPAÑOL]\nPrenda de alta calidad Hecho en México.\n\n[ENGLISH]\nPremium product Made in Mexico."
+            
+    except Exception as e:
+        print(f"🛑 Error conectando con la API de Groq en la nube: {e}")
+        return f"[ESPAÑOL]\nPrenda exclusiva Hecho en México.\n\n[ENGLISH]\nExclusive product Made in Mexico. (Error API Groq: {e})"
