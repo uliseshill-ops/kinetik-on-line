@@ -43,13 +43,14 @@ st.markdown("""
         font-weight: bold;
         color: #333333;
     }
-    /* --- CORRECCIÓN NIVEL PRO: TAMAÑO UNIFORME PARA GALERÍA DE FOTOS EN ADMIN --- */
+    /* --- VISTA COMPLETA SIN RECORTES (OBJECT-FIT: CONTAIN) --- */
     [data-testid="stImage"] img {
-        height: 380px !important;
         width: 100% !important;
-        object-fit: cover !important;
-        object-position: center top !important;
+        height: auto !important;
+        max-height: 550px !important; /* <--- Un cuadro más holgado para que respire la imagen */
+        object-fit: contain !important; /* <--- Muestra toda la foto sin recortar ningún rincón */
         border-radius: 8px;
+        background-color: #f9f9f9; /* Fondo sutil elegante para fotos con proporciones distintas */
     }
     </style>
 """, unsafe_allow_html=True)
