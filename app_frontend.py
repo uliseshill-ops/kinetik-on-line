@@ -43,7 +43,7 @@ st.markdown("""
         font-weight: bold;
         color: #333333;
     }
-    /* --- CORRECCIÓN DE TAMAÑO UNIFORME PARA GALERÍA DE FOTOS EN ADMIN --- */
+    /* --- CORRECCIÓN NIVEL PRO: TAMAÑO UNIFORME PARA GALERÍA DE FOTOS EN ADMIN --- */
     [data-testid="stImage"] img {
         height: 380px !important;
         width: 100% !important;
@@ -76,14 +76,11 @@ if not st.session_state["autenticado"]:
         st.info("Ingresa la contraseña maestra para abrir la cabecera de control.")
         
         with st.form("form_login_maestro", clear_on_submit=False):
-            # Casilla de contraseña con caracteres ocultos (tipo password)
             password_input = st.text_input("Contraseña de Acceso:", type="password", placeholder="••••••••••••")
             btn_login = st.form_submit_button("🔑 Entrar al Sistema", use_container_width=True)
             
             if btn_login:
                 pwd_ingresado = password_input.strip()
-                
-                # Comparar lo tecleado con el dato obtenido de Render
                 if pwd_ingresado == admin_password:
                     st.session_state["autenticado"] = True
                     st.success("¡Acceso concedido! Entrando a la pista...")
@@ -91,9 +88,8 @@ if not st.session_state["autenticado"]:
                 else:
                     st.error("🚫 Contraseña incorrecta. Revisa tu clave de acceso y vuelve a intentar.")
                     
-    st.stop() # Frena la ejecución si no está autenticado
+    st.stop()
 # ==============================================================================
-
 
 # Catálogos oficiales
 MAPEO_GENERO = {'MUJER': '1', 'HOMBRE': '2', 'UNISEX': '3'}
@@ -366,7 +362,6 @@ with tab3:
             if datos:
                 df = pd.DataFrame(datos)
                 
-                # --- ORDENAMIENTO Y VISUALIZACIÓN INCLUYENDO TOTAL LIKES ---
                 if 'total_likes' in df.columns:
                     cols = list(df.columns)
                     if 'existencia' in cols:
