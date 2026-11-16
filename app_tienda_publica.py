@@ -35,16 +35,36 @@ st.markdown("""
     }
 
     /* Etiquetas de inputs discretas y legibles */
-    [data-testid="stWidgetLabel"] p, label, .stTextInput label, .stSelectbox label {
+    [data-testid="stWidgetLabel"] p, label, .stTextInput label, .stSelectbox label, .stRadio label {
         color: #B8FF33 !important;
-        font-weight: 400 !important;
+        font-weight: 600 !important;
         font-size: 0.95rem !important;
+    }
+
+    /* Estilo pro para botones horizontales de selección de Talla (st.radio) */
+    div[role="radiogroup"] {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+    div[role="radiogroup"] > label {
+        background-color: #252932 !important;
+        border: 1px solid #3A3F4B !important;
+        padding: 4px 12px !important;
+        border-radius: 6px !important;
+        color: #FFFFFF !important;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    div[role="radiogroup"] > label:hover {
+        border-color: #CCFF00 !important;
     }
 
     /* Banner Hero Superior con acento en la K Naranja */
     .kinetik-hero {
         background: linear-gradient(135deg, #161920 0%, #0F1115 100%);
-        border-left: 6px solid #FF5722; /* Acento naranja dinámico */
+        border-left: 6px solid #FF5722;
         border-top: 1px solid #2A2E39;
         border-right: 1px solid #2A2E39;
         border-bottom: 1px solid #2A2E39;
@@ -222,6 +242,21 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# --- MAPEO AUXILIAR DE TALLAS POR CÓDIGO SKU (FALLBACK SI LA COLUMNA 'talla' VIENE VACÍA) ---
+CODIGO_A_TALLA = {
+    '1': 'XS', '2': 'S', '3': 'M', '4': 'G', '5': 'XG', '6': 'XXG', '7': 'UNITALLA'
+}
+
+def detectar_talla_fila(row) -> str:
+    """Obtiene la talla oficial desde la columna 'talla' o la deduce del 6to dígito del SKU."""
+    talla_col = str(row.get('talla', '')).strip().upper()
+    if talla_col and talla_col not in ['NAN', 'NONE', '']:
+        return talla_col
+    sku = str(row.get('codigo', '')).strip()
+    if len(sku) >= 7:
+        return CODIGO_A_TALLA.get(sku[-2], 'UNITALLA')
+    return 'UNITALLA'
+
 # --- MÓDULO DE AUTENTICACIÓN ---
 def verificar_contraseña():
     if "autenticado" not in st.session_state:
@@ -312,96 +347,140 @@ try:
                     df_filtrado['codigo'].astype(str).str.contains(buscar, case=False, na=False)
                 ]
 
-            st.caption(f"⚡ Mostrando {len(df_filtrado)} prendas en catálogo")
-            st.divider()
+            if not df_filtrado.empty:
+                # --- AGRUPACIÓN INTELIGENTE POR MODELO (PRENDA + COLOR + PRECIO) ---
+                df_filtrado['talla_limpia'] = df_filtrado.apply(detectar_talla_fila, axis=1)
+                df_filtrado['modelo_grupo'] = (
+                    df_filtrado['prenda'].astype(str).str.strip().str.upper() + "_" +
+                    df_filtrado['color'].astype(str).str.strip().str.upper() + "_" +
+                    df_filtrado['precio_venta'].astype(str)
+                )
 
-            cols = st.columns(3)
-            
-            for idx, row in df_filtrado.reset_index(drop=True).iterrows():
-                codigo_sku = str(row.get('codigo', 'SKU'))
-                prenda_nombre = str(row.get('prenda', 'PRENDA')).upper()
-                desc_orig = str(row.get('descripcion_original', 'Prenda Hecho en México'))
-                precio_v = float(row.get('precio_venta', 0.0))
-                color_p = str(row.get('color', 'N/A'))
-                historia = str(row.get('historia_ia', 'Calidad textil garantizada.'))
-                
-                existencia_actual = int(row.get('existencia', 0)) if pd.notnull(row.get('existencia')) else 0
-                esta_agotado = existencia_actual <= 0
-                num_likes = int(row.get('total_likes', 0)) if pd.notnull(row.get('total_likes')) else 0
-                
-                raw_imgs = row.get('imagenes', [])
-                lista_imagenes = []
-                if isinstance(raw_imgs, str):
-                    try:
-                        parsed = ast.literal_eval(raw_imgs)
-                        if isinstance(parsed, list): lista_imagenes = parsed
-                        else: lista_imagenes = [raw_imgs]
-                    except Exception:
-                        lista_imagenes = [raw_imgs] if raw_imgs else []
-                elif isinstance(raw_imgs, list):
-                    lista_imagenes = raw_imgs
-                
-                if not lista_imagenes and row.get('imagen_url'):
-                    lista_imagenes = [row.get('imagen_url')]
+                grupos_modelos = list(df_filtrado.groupby('modelo_grupo', sort=False))
+                st.caption(f"⚡ Mostrando {len(grupos_modelos)} modelos en catálogo ({len(df_filtrado)} variantes de talla)")
+                st.divider()
 
-                lista_imagenes_limpia = [
-                    img for img in lista_imagenes 
-                    if str(img).strip() and str(img).strip().lower() not in ["nan", "none"]
-                ]
+                cols = st.columns(3)
+                orden_tallas = {'XS': 1, 'S': 2, 'M': 3, 'G': 4, 'L': 4, 'XG': 5, 'XL': 5, 'XXG': 6, 'XXL': 6, 'UNITALLA': 7}
 
-                with cols[idx % 3]:
-                    with st.container(border=True):
-                        if lista_imagenes_limpia:
-                            if len(lista_imagenes_limpia) > 1:
-                                nombres_pestanas = [f"Foto {i+1}" for i in range(len(lista_imagenes_limpia))]
-                                tabs_fotos = st.tabs(nombres_pestanas)
-                                for t_idx, tab_obj in enumerate(tabs_fotos):
-                                    with tab_obj:
-                                        img_url = construir_url_imagen(lista_imagenes_limpia[t_idx])
-                                        renderizar_imagen_catalogo(img_url, esta_agotado)
+                for idx, (modelo_id, grupo_df) in enumerate(grupos_modelos):
+                    grupo_df = grupo_df.copy()
+                    grupo_df['orden_t'] = grupo_df['talla_limpia'].map(lambda x: orden_tallas.get(x, 99))
+                    grupo_df = grupo_df.sort_values('orden_t')
+
+                    tallas_disponibles = grupo_df['talla_limpia'].tolist()
+
+                    with cols[idx % 3]:
+                        with st.container(border=True):
+                            # --- SELECTOR DE TALLA POR PRENDA ---
+                            if len(tallas_disponibles) > 1:
+                                talla_elegida = st.radio(
+                                    "📏 Selecciona tu Talla:",
+                                    options=tallas_disponibles,
+                                    horizontal=True,
+                                    key=f"radio_talla_{modelo_id}_{idx}"
+                                )
                             else:
-                                img_url = construir_url_imagen(lista_imagenes_limpia[0])
-                                renderizar_imagen_catalogo(img_url, esta_agotado)
-                        else:
-                            renderizar_imagen_catalogo(PLACEHOLDER_OFICIAL, esta_agotado)
-                        
-                        if esta_agotado:
-                            st.subheader(f"{prenda_nombre} (AGOTADO)")
-                            st.markdown(f"<span style='color:#A0AAB2;'>{desc_orig}</span>", unsafe_allow_html=True)
-                            st.markdown(f"<span style='color:#A0AAB2;'>Color: **{color_p}** | SKU:</span> <span class='badge-sku'>{codigo_sku}</span>", unsafe_allow_html=True)
-                            st.markdown(f"<p class='card-precio-agotado'>${precio_v:,.2f} MXN</p>", unsafe_allow_html=True)
-                        else:
-                            st.subheader(f"{prenda_nombre}")
-                            st.markdown(f"<span style='color:#D0D7DE;'>{desc_orig}</span>", unsafe_allow_html=True)
-                            st.markdown(f"<span style='color:#A0AAB2;'>Color: **{color_p}** | SKU:</span> <span class='badge-sku'>{codigo_sku}</span>", unsafe_allow_html=True)
-                            st.markdown(f"<p class='card-precio'>${precio_v:,.2f} MXN</p>", unsafe_allow_html=True)
-                        
-                        with st.expander("📖 Detalles y Tecnología Textil"):
-                            st.write(historia)
-                        
-                        btn_like = st.button(f"❤️ Me Gusta ({num_likes})", key=f"like_{codigo_sku}_{idx}", use_container_width=True)
-                        
-                        if btn_like:
-                            try:
-                                url_like = f"{URL_BASE_RENDER}/productos/{codigo_sku}/like"
-                                response_like = requests.post(url_like)
-                                if response_like.status_code == 200:
-                                    st.toast("🔥 ¡Like registrado en KINETIK!")
-                                    st.rerun()
-                                else:
-                                    st.error(f"⚠️ No se pudo registrar el like: {response_like.text}")
-                            except Exception as err_like:
-                                st.error(f"Error de conexión al dar like: {err_like}")
+                                talla_elegida = tallas_disponibles[0]
+                                st.markdown(f"<span style='color:#B8FF33; font-size:0.9rem;'>📏 Talla única disponible: <b>{talla_elegida}</b></span>", unsafe_allow_html=True)
 
-                        if esta_agotado:
-                            st.warning("⚠️ Temporalmente agotado. Dale ❤️ Me Gusta para priorizar su reabastecimiento.")
-                        else:
-                            if num_likes > 0:
-                                st.caption(f"🔥 ¡Alta demanda! {num_likes} personas ya la tienen en la mira.")
-                            mensaje_wa = f"¡Hola KINETIK! Me interesa la prenda SKU: {codigo_sku} ({desc_orig}) en color {color_p} con precio de ${precio_v:.2f} MXN. ¿Me apoyas con mi pedido?"
-                            url_wa = f"https://wa.me/{NUMERO_VENTAS_WHATSAPP}?text={quote(mensaje_wa)}"
-                            st.link_button("⚡ Pedir por WhatsApp", url_wa, use_container_width=True)
+                            # Obtenemos la fila exacta de la talla seleccionada
+                            row = grupo_df[grupo_df['talla_limpia'] == talla_elegida].iloc[0]
+
+                            codigo_sku = str(row.get('codigo', 'SKU'))
+                            prenda_nombre = str(row.get('prenda', 'PRENDA')).upper()
+                            desc_orig = str(row.get('descripcion_original', 'Prenda Hecho en México'))
+                            precio_v = float(row.get('precio_venta', 0.0))
+                            color_p = str(row.get('color', 'N/A'))
+                            historia = str(row.get('historia_ia', 'Calidad textil garantizada.'))
                             
+                            existencia_actual = int(row.get('existencia', 0)) if pd.notnull(row.get('existencia')) else 0
+                            esta_agotado = existencia_actual <= 0
+                            
+                            # Total de likes combinados de todas las tallas del modelo
+                            num_likes = int(grupo_df['total_likes'].fillna(0).sum()) if 'total_likes' in grupo_df.columns else 0
+                            
+                            # Extracción de imágenes (prioriza la talla elegida o toma la del modelo)
+                            raw_imgs = row.get('imagenes', [])
+                            lista_imagenes = []
+                            if isinstance(raw_imgs, str):
+                                try:
+                                    parsed = ast.literal_eval(raw_imgs)
+                                    lista_imagenes = parsed if isinstance(parsed, list) else [raw_imgs]
+                                except Exception:
+                                    lista_imagenes = [raw_imgs] if raw_imgs else []
+                            elif isinstance(raw_imgs, list):
+                                lista_imagenes = raw_imgs
+                            
+                            if not lista_imagenes and row.get('imagen_url'):
+                                lista_imagenes = [row.get('imagen_url')]
+
+                            lista_imagenes_limpia = [
+                                img for img in lista_imagenes 
+                                if str(img).strip() and str(img).strip().lower() not in ["nan", "none"]
+                            ]
+
+                            if lista_imagenes_limpia:
+                                if len(lista_imagenes_limpia) > 1:
+                                    nombres_pestanas = [f"Foto {i+1}" for i in range(len(lista_imagenes_limpia))]
+                                    tabs_fotos = st.tabs(nombres_pestanas)
+                                    for t_idx, tab_obj in enumerate(tabs_fotos):
+                                        with tab_obj:
+                                            img_url = construir_url_imagen(lista_imagenes_limpia[t_idx])
+                                            renderizar_imagen_catalogo(img_url, esta_agotado)
+                                else:
+                                    img_url = construir_url_imagen(lista_imagenes_limpia[0])
+                                    renderizar_imagen_catalogo(img_url, esta_agotado)
+                            else:
+                                renderizar_imagen_catalogo(PLACEHOLDER_OFICIAL, esta_agotado)
+                            
+                            if esta_agotado:
+                                st.subheader(f"{prenda_nombre} — Talla {talla_elegida} (AGOTADO)")
+                                st.markdown(f"<span style='color:#A0AAB2;'>{desc_orig}</span>", unsafe_allow_html=True)
+                                st.markdown(f"<span style='color:#A0AAB2;'>Color: **{color_p}** | Talla: **{talla_elegida}** | SKU:</span> <span class='badge-sku'>{codigo_sku}</span>", unsafe_allow_html=True)
+                                st.markdown(f"<p class='card-precio-agotado'>${precio_v:,.2f} MXN</p>", unsafe_allow_html=True)
+                            else:
+                                st.subheader(f"{prenda_nombre}")
+                                st.markdown(f"<span style='color:#D0D7DE;'>{desc_orig}</span>", unsafe_allow_html=True)
+                                st.markdown(f"<span style='color:#A0AAB2;'>Color: **{color_p}** | Talla: **{talla_elegida}** | SKU:</span> <span class='badge-sku'>{codigo_sku}</span>", unsafe_allow_html=True)
+                                st.caption(f"🟢 Stock en talla {talla_elegida}: **{existencia_actual}** pzas")
+                                st.markdown(f"<p class='card-precio'>${precio_v:,.2f} MXN</p>", unsafe_allow_html=True)
+                            
+                            with st.expander("📖 Detalles y Tecnología Textil"):
+                                st.write(historia)
+                            
+                            btn_like = st.button(f"❤️ Me Gusta ({num_likes})", key=f"like_{codigo_sku}_{idx}", use_container_width=True)
+                            
+                            if btn_like:
+                                try:
+                                    url_like = f"{URL_BASE_RENDER}/productos/{codigo_sku}/like"
+                                    response_like = requests.post(url_like)
+                                    if response_like.status_code == 200:
+                                        st.toast("🔥 ¡Like registrado en KINETIK!")
+                                        st.rerun()
+                                    else:
+                                        st.error(f"⚠️ No se pudo registrar el like: {response_like.text}")
+                                except Exception as err_like:
+                                    st.error(f"Error de conexión al dar like: {err_like}")
+
+                            if esta_agotado:
+                                st.warning(f"⚠️ Talla {talla_elegida} agotada. Selecciona otra talla arriba o dale ❤️ Me Gusta.")
+                            else:
+                                if num_likes > 0:
+                                    st.caption(f"🔥 ¡Alta demanda! {num_likes} personas ya la tienen en la mira.")
+                                mensaje_wa = (
+                                    f"¡Hola KINETIK! Me interesa la prenda:\n"
+                                    f"• Modelo: {desc_orig}\n"
+                                    f"• Talla: {talla_elegida}\n"
+                                    f"• Color: {color_p}\n"
+                                    f"• SKU exacto: {codigo_sku}\n"
+                                    f"• Precio: ${precio_v:.2f} MXN\n"
+                                    f"¿Me apoyas con mi pedido?"
+                                )
+                                url_wa = f"https://wa.me/{NUMERO_VENTAS_WHATSAPP}?text={quote(mensaje_wa)}"
+                                st.link_button(f"⚡ Pedir Talla {talla_elegida} por WhatsApp", url_wa, use_container_width=True)
+            else:
+                st.info("No se encontraron prendas con esos filtros.")
         else:
             st.info("Aún no hay prendas registradas en el catálogo público.")
     else:
