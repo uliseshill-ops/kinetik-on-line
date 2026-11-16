@@ -248,7 +248,7 @@ CODIGO_A_TALLA = {
 }
 
 def detectar_talla_fila(row) -> str:
-    """Obtiene la talla oficial desde la columna 'talla' o la deduce del 6to dígito del SKU."""
+    """Obtiene la talla oficial desde la columna 'talla' o la deduce del penúltimo dígito del SKU."""
     talla_col = str(row.get('talla', '')).strip().upper()
     if talla_col and talla_col not in ['NAN', 'NONE', '']:
         return talla_col
@@ -256,6 +256,27 @@ def detectar_talla_fila(row) -> str:
     if len(sku) >= 7:
         return CODIGO_A_TALLA.get(sku[-2], 'UNITALLA')
     return 'UNITALLA'
+
+def extraer_imagenes_fila(row) -> list:
+    """Extrae y limpia la lista de URLs de imágenes de una fila."""
+    raw_imgs = row.get('imagenes', [])
+    lista_imagenes = []
+    if isinstance(raw_imgs, str):
+        try:
+            parsed = ast.literal_eval(raw_imgs)
+            lista_imagenes = parsed if isinstance(parsed, list) else [raw_imgs]
+        except Exception:
+            lista_imagenes = [raw_imgs] if raw_imgs else []
+    elif isinstance(raw_imgs, list):
+        lista_imagenes = raw_imgs
+    
+    if not lista_imagenes and row.get('imagen_url'):
+        lista_imagenes = [row.get('imagen_url')]
+
+    return [
+        img for img in lista_imagenes 
+        if str(img).strip() and str(img).strip().lower() not in ["nan", "none"]
+    ]
 
 # --- MÓDULO DE AUTENTICACIÓN ---
 def verificar_contraseña():
@@ -378,7 +399,7 @@ try:
                                     "📏 Selecciona tu Talla:",
                                     options=tallas_disponibles,
                                     horizontal=True,
-                                    key=f"radio_talla_{modelo_id}_{idx}"
+                                    key=f"radio_talla_{modelo_id}"
                                 )
                             else:
                                 talla_elegida = tallas_disponibles[0]
@@ -400,25 +421,14 @@ try:
                             # Total de likes combinados de todas las tallas del modelo
                             num_likes = int(grupo_df['total_likes'].fillna(0).sum()) if 'total_likes' in grupo_df.columns else 0
                             
-                            # Extracción de imágenes (prioriza la talla elegida o toma la del modelo)
-                            raw_imgs = row.get('imagenes', [])
-                            lista_imagenes = []
-                            if isinstance(raw_imgs, str):
-                                try:
-                                    parsed = ast.literal_eval(raw_imgs)
-                                    lista_imagenes = parsed if isinstance(parsed, list) else [raw_imgs]
-                                except Exception:
-                                    lista_imagenes = [raw_imgs] if raw_imgs else []
-                            elif isinstance(raw_imgs, list):
-                                lista_imagenes = raw_imgs
-                            
-                            if not lista_imagenes and row.get('imagen_url'):
-                                lista_imagenes = [row.get('imagen_url')]
-
-                            lista_imagenes_limpia = [
-                                img for img in lista_imagenes 
-                                if str(img).strip() and str(img).strip().lower() not in ["nan", "none"]
-                            ]
+                            # Extracción de imágenes con respaldo de galería compartida entre tallas del mismo modelo
+                            lista_imagenes_limpia = extraer_imagenes_fila(row)
+                            if not lista_imagenes_limpia:
+                                for _, alt_row in grupo_df.iterrows():
+                                    alt_imgs = extraer_imagenes_fila(alt_row)
+                                    if alt_imgs:
+                                        lista_imagenes_limpia = alt_imgs
+                                        break
 
                             if lista_imagenes_limpia:
                                 if len(lista_imagenes_limpia) > 1:
@@ -449,7 +459,7 @@ try:
                             with st.expander("📖 Detalles y Tecnología Textil"):
                                 st.write(historia)
                             
-                            btn_like = st.button(f"❤️ Me Gusta ({num_likes})", key=f"like_{codigo_sku}_{idx}", use_container_width=True)
+                            btn_like = st.button(f"❤️ Me Gusta ({num_likes})", key=f"like_{codigo_sku}_{modelo_id}", use_container_width=True)
                             
                             if btn_like:
                                 try:
