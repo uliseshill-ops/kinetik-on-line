@@ -16,13 +16,19 @@ PLACEHOLDER_OFICIAL = "https://via.placeholder.com/400x300/2E7D32/FFFFFF.png?tex
 
 st.set_page_config(page_title="Hecho en México - KINETIK Tienda Oficial", page_icon="🇲🇽", layout="wide")
 
-# Estilos CSS comerciales de alta gama + Normalización de tamaño de fotos
+# Estilos CSS comerciales de alta gama + Normalización de tamaño de fotos + Estado Agotado
 st.markdown("""
     <style>
     .card-precio {
         font-size: 26px;
         font-weight: bold;
         color: #2E7D32;
+    }
+    .card-precio-agotado {
+        font-size: 24px;
+        font-weight: bold;
+        color: #757575;
+        text-decoration: line-through;
     }
     .badge-sku {
         background-color: #E0E0E0;
@@ -32,14 +38,6 @@ st.markdown("""
         font-weight: bold;
         color: #333333;
     }
-    /* --- CORRECCIÓN DE TAMAÑO UNIFORME PARA GALERÍA DE FOTOS --- */
-    /* --- [data-testid="stImage"] img {  --- */
-    /* ---     height: 380px !important;  --- */
-    /* ---     width: 100% !important;  --- */
-    /* ---     object-fit: cover !important;  --- */
-    /* ---     object-position: center top !important;  --- */
-    /* ---     border-radius: 8px;  --- */
-    /* --- }  --- */
     
     /* --- VISTA COMPLETA SIN RECORTES (OBJECT-FIT: CONTAIN) --- */
     [data-testid="stImage"] img {
@@ -49,6 +47,35 @@ st.markdown("""
         object-fit: contain !important; /* <--- Esto evita que la foto se recorte en fullscreen */
         border-radius: 8px;
         background-color: #f9f9f9; 
+    }
+
+    /* --- ESTILOS PARA PRENDAS AGOTADAS (STOCK = 0) --- */
+    .contenedor-imagen-tienda {
+        position: relative;
+        display: inline-block;
+        width: 100%;
+    }
+    .prenda-agotada {
+        filter: grayscale(100%) opacity(55%);
+        width: 100%;
+        height: auto;
+        max-height: 750px;
+        object-fit: contain;
+        border-radius: 8px;
+        background-color: #f9f9f9;
+    }
+    .badge-agotado {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        background-color: #D32F2F;
+        color: white;
+        padding: 6px 12px;
+        font-weight: bold;
+        border-radius: 6px;
+        font-size: 13px;
+        z-index: 10;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.25);
     }
     </style>
 """, unsafe_allow_html=True)
@@ -96,6 +123,21 @@ def construir_url_imagen(ruta_raw: str) -> str:
     
     return f"{URL_BASE_RENDER}/{clean_path.lstrip('/')}"
 
+def renderizar_imagen_catalogo(url_img: str, agotado: bool):
+    """Renderiza la imagen normal o en escala de grises con sello si el inventario es 0."""
+    if agotado:
+        st.markdown(f"""
+            <div class="contenedor-imagen-tienda">
+                <div class="badge-agotado">🔴 AGOTADO</div>
+                <img src="{url_img}" class="prenda-agotada" onerror="this.src='{PLACEHOLDER_OFICIAL}';">
+            </div>
+        """, unsafe_allow_html=True)
+    else:
+        try:
+            st.image(url_img, use_container_width=True)
+        except Exception:
+            st.image(PLACEHOLDER_OFICIAL, use_container_width=True)
+
 try:
     res = requests.get(URL_FASTAPI_PRODUCTOS)
     if res.status_code == 200:
@@ -122,7 +164,7 @@ try:
                     df_filtrado['codigo'].astype(str).str.contains(buscar, case=False, na=False)
                 ]
 
-            st.caption(f"Mostrando {len(df_filtrado)} prendas disponibles en catálogo")
+            st.caption(f"Mostrando {len(df_filtrado)} prendas en catálogo")
             st.divider()
 
             # --- ESCAPARATE DE PRODUCTOS EN CUADRÍCULA (3 COLUMNAS) ---
@@ -136,8 +178,12 @@ try:
                 color_p = str(row.get('color', 'N/A'))
                 historia = str(row.get('historia_ia', 'Calidad textil garantizada.'))
                 
+                # Validación de existencia en inventario
+                existencia_actual = int(row.get('existencia', 0)) if pd.notnull(row.get('existencia')) else 0
+                esta_agotado = existencia_actual <= 0
+                
                 # Obtenemos los likes directamente de la base de datos (con fallback al esquema)
-                num_likes = int(row.get('total_likes', 0))
+                num_likes = int(row.get('total_likes', 0)) if pd.notnull(row.get('total_likes')) else 0
                 
                 # Extracción robusta de imágenes (Manejo de string lista de Python desde CSV)
                 raw_imgs = row.get('imagenes', [])
@@ -166,7 +212,7 @@ try:
 
                 with cols[idx % 3]:
                     with st.container(border=True):
-                        # --- GALERÍA FOTOGRÁFICA (BLINDADA Y ESTANDARIZADA) ---
+                        # --- GALERÍA FOTOGRÁFICA (BLINDADA, ESTANDARIZADA Y CON ESTADO AGOTADO) ---
                         if lista_imagenes_limpia:
                             if len(lista_imagenes_limpia) > 1:
                                 nombres_pestanas = [f"Foto {i+1}" for i in range(len(lista_imagenes_limpia))]
@@ -174,46 +220,47 @@ try:
                                 for t_idx, tab_obj in enumerate(tabs_fotos):
                                     with tab_obj:
                                         img_url = construir_url_imagen(lista_imagenes_limpia[t_idx])
-                                        try:
-                                            st.image(img_url, use_container_width=True)
-                                        except Exception:
-                                            st.image(PLACEHOLDER_OFICIAL, use_container_width=True)
+                                        renderizar_imagen_catalogo(img_url, esta_agotado)
                             else:
                                 img_url = construir_url_imagen(lista_imagenes_limpia[0])
-                                try:
-                                    st.image(img_url, use_container_width=True)
-                                except Exception:
-                                    st.image(PLACEHOLDER_OFICIAL, use_container_width=True)
+                                renderizar_imagen_catalogo(img_url, esta_agotado)
                         else:
-                            st.image(PLACEHOLDER_OFICIAL, use_container_width=True)
+                            renderizar_imagen_catalogo(PLACEHOLDER_OFICIAL, esta_agotado)
                         
-                        st.subheader(f"👕 {prenda_nombre}")
-                        st.markdown(f"**{desc_orig}**")
-                        st.markdown(f"Color: **{color_p}** | SKU: <span class='badge-sku'>{codigo_sku}</span>", unsafe_allow_html=True)
-                        st.markdown(f"<p class='card-precio'>${precio_v:,.2f} MXN</p>", unsafe_allow_html=True)
+                        if esta_agotado:
+                            st.subheader(f"👕 {prenda_nombre} (AGOTADO)")
+                            st.markdown(f"**{desc_orig}**")
+                            st.markdown(f"Color: **{color_p}** | SKU: <span class='badge-sku'>{codigo_sku}</span>", unsafe_allow_html=True)
+                            st.markdown(f"<p class='card-precio-agotado'>${precio_v:,.2f} MXN</p>", unsafe_allow_html=True)
+                        else:
+                            st.subheader(f"👕 {prenda_nombre}")
+                            st.markdown(f"**{desc_orig}**")
+                            st.markdown(f"Color: **{color_p}** | SKU: <span class='badge-sku'>{codigo_sku}</span>", unsafe_allow_html=True)
+                            st.markdown(f"<p class='card-precio'>${precio_v:,.2f} MXN</p>", unsafe_allow_html=True)
                         
                         with st.expander("📖 Storytelling de la Prenda"):
                             st.write(historia)
                         
-                        # --- BOTÓN DE LIKE CONECTADO AL BACKEND ---
+                        # --- BOTÓN DE LIKE CONECTADO AL BACKEND (ACTIVO INCLUSO SI ESTÁ AGOTADO PARA MEDIR DEMANDA) ---
                         btn_like = st.button(f"❤️ Me Gusta ({num_likes})", key=f"like_{codigo_sku}_{idx}")
                         
                         if btn_like:
                             try:
-                                # Petición POST al endpoint del backend para registrar el like de forma persistente
                                 url_like = f"{URL_BASE_RENDER}/productos/{codigo_sku}/like"
                                 response_like = requests.post(url_like)
                                 
                                 if response_like.status_code == 200:
                                     st.success("🔥 ¡Like registrado en la base de datos, compa!")
-                                    st.rerun() # Recargamos para refrescar el contador oficial de la BD
+                                    st.rerun()
                                 else:
                                     st.error(f"⚠️ No se pudo registrar el like: {response_like.text}")
                             except Exception as err_like:
                                 st.error(f"Error de conexión al dar like: {err_like}")
 
-                        # Si el producto ya tiene likes acumulados, mostramos el botón de WhatsApp directo
-                        if num_likes > 0:
+                        # Si hay existencia y likes acumulados, mostramos botón de WhatsApp
+                        if esta_agotado:
+                            st.warning("⚠️ Prenda temporalmente agotada. Dale ❤️ Me Gusta para avisarnos que la quieres de vuelta.")
+                        elif num_likes > 0:
                             st.success("🔥 ¡Prenda con alta demanda en la tienda!")
                             mensaje_wa = f"¡Hola! Me gustó mucho la prenda SKU: {codigo_sku} ({desc_orig}) con precio de ${precio_v:.2f} MXN. Quisiera ponerme en contacto con ventas para realizar mi compra."
                             url_wa = f"https://wa.me/{NUMERO_VENTAS_WHATSAPP}?text={quote(mensaje_wa)}"
