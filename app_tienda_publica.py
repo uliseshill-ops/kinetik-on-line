@@ -33,12 +33,22 @@ st.markdown("""
         color: #333333;
     }
     /* --- CORRECCIÓN DE TAMAÑO UNIFORME PARA GALERÍA DE FOTOS --- */
+    /* --- [data-testid="stImage"] img {  --- */
+    /* ---     height: 380px !important;  --- */
+    /* ---     width: 100% !important;  --- */
+    /* ---     object-fit: cover !important;  --- */
+    /* ---     object-position: center top !important;  --- */
+    /* ---     border-radius: 8px;  --- */
+    /* --- }  --- */
+    
+    /* --- VISTA COMPLETA SIN RECORTES (OBJECT-FIT: CONTAIN) --- */
     [data-testid="stImage"] img {
-        height: 380px !important;
         width: 100% !important;
-        object-fit: cover !important;
-        object-position: center top !important;
+        height: auto !important;
+        max-height: 750px !important; 
+        object-fit: contain !important; /* <--- Esto evita que la foto se recorte en fullscreen */
         border-radius: 8px;
+        background-color: #f9f9f9; 
     }
     </style>
 """, unsafe_allow_html=True)
