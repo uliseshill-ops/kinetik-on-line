@@ -14,9 +14,9 @@ URL_FASTAPI_PRODUCTOS = "https://kinetik-on-line.onrender.com/productos/"
 URL_BASE_RENDER = "https://kinetik-on-line.onrender.com"
 PLACEHOLDER_OFICIAL = "https://via.placeholder.com/400x300/1A1D24/CCFF00.png?text=KINETIK+Hecho+en+M%C3%A9xico"
 
-st.set_page_config(page_title="Hecho en México - KINETIK Tienda Oficial", page_icon="⚡", layout="wide")
+st.set_page_config(page_title="Hecho en México - KINETIK Tienda Oficial", page_icon="🇲🇽", layout="wide")
 
-# --- ESTILOS CSS: KINETIK DARK MODE + VERDE VOLT NEÓN ---
+# --- ESTILOS CSS: KINETIK DARK MODE + VERDE VOLT + LOGO NARANJA ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Montserrat:ital,wght@0,700;0,800;1,800&display=swap');
@@ -34,18 +34,17 @@ st.markdown("""
         letter-spacing: 0.5px;
     }
 
-    /* --- CORRECCIÓN DE ETIQUETAS DE INPUTS (SELECTBOX Y TEXT_INPUT) --- */
-    /* Las ponemos en verde volt discreto, sin negritas, para perfecta visibilidad */
+    /* Etiquetas de inputs discretas y legibles */
     [data-testid="stWidgetLabel"] p, label, .stTextInput label, .stSelectbox label {
         color: #B8FF33 !important;
         font-weight: 400 !important;
         font-size: 0.95rem !important;
     }
 
-    /* Banner Hero Superior */
+    /* Banner Hero Superior con acento en la K Naranja */
     .kinetik-hero {
         background: linear-gradient(135deg, #161920 0%, #0F1115 100%);
-        border-left: 6px solid #CCFF00;
+        border-left: 6px solid #FF5722; /* Acento naranja dinámico */
         border-top: 1px solid #2A2E39;
         border-right: 1px solid #2A2E39;
         border-bottom: 1px solid #2A2E39;
@@ -53,24 +52,47 @@ st.markdown("""
         border-radius: 10px;
         margin-bottom: 20px;
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        display: flex;
+        align-items: center;
+        gap: 20px;
     }
-    .kinetik-hero h1 {
+    
+    /* Contenedor del Isotipo K Naranja */
+    .kinetik-logo-k {
+        background-color: #1A1D24;
+        border: 2px solid #FF5722;
+        color: #FF5722;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 800;
+        font-style: italic;
+        font-size: 2.2rem;
+        width: 65px;
+        height: 65px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        box-shadow: 0 0 15px rgba(255, 87, 34, 0.3);
+        flex-shrink: 0;
+    }
+
+    .kinetik-hero-content h1 {
         color: #FFFFFF;
         font-weight: 800;
         font-style: italic;
         margin: 0;
-        font-size: 2.2rem;
+        font-size: 2.1rem;
     }
-    .kinetik-hero span {
+    .kinetik-hero-content span {
         color: #CCFF00;
     }
-    .kinetik-hero p {
+    .kinetik-hero-content p {
         color: #A0AAB2;
-        margin: 8px 0 0 0;
+        margin: 6px 0 0 0;
         font-size: 1.05rem;
     }
 
-    /* Tarjetas de Producto (Containers con borde) */
+    /* Tarjetas de Producto */
     [data-testid="stVerticalBlockBorderWrapper"] {
         background-color: #1A1D24 !important;
         border: 1px solid #2A2E39 !important;
@@ -111,7 +133,7 @@ st.markdown("""
         letter-spacing: 0.5px;
     }
 
-    /* --- VISTA COMPLETA SIN RECORTES (OBJECT-FIT: CONTAIN) --- */
+    /* VISTA COMPLETA SIN RECORTES */
     [data-testid="stImage"] img {
         width: 100% !important;
         height: auto !important;
@@ -121,7 +143,7 @@ st.markdown("""
         background-color: #12141A; 
     }
 
-    /* --- ESTILOS PARA PRENDAS AGOTADAS (STOCK = 0) --- */
+    /* PRENDAS AGOTADAS */
     .contenedor-imagen-tienda {
         position: relative;
         display: inline-block;
@@ -152,7 +174,7 @@ st.markdown("""
         box-shadow: 0 4px 10px rgba(0,0,0,0.4);
     }
 
-    /* Botones estándar de Streamlit (Likes / Entrar) */
+    /* Botones estándar */
     .stButton > button {
         background-color: #252932 !important;
         color: #FFFFFF !important;
@@ -167,7 +189,7 @@ st.markdown("""
         background-color: #1E222A !important;
     }
 
-    /* Botón de Compra Directa WhatsApp (Verde Volt de Alto Contraste) */
+    /* Botón de Compra WhatsApp */
     [data-testid="stLinkButton"] > a {
         background-color: #CCFF00 !important;
         color: #0F1115 !important;
@@ -186,32 +208,21 @@ st.markdown("""
         box-shadow: 0 6px 20px rgba(204, 255, 0, 0.5) !important;
     }
 
-    /* Pestañas de fotos (Tabs) */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
-    }
-    .stTabs [data-baseweb="tab"] {
-        color: #A0AAB2;
-        font-weight: 600;
-    }
-    .stTabs [aria-selected="true"] {
-        color: #CCFF00 !important;
-        border-bottom-color: #CCFF00 !important;
-    }
+    /* Tabs y Selectores */
+    .stTabs [data-baseweb="tab-list"] { gap: 8px; }
+    .stTabs [data-baseweb="tab"] { color: #A0AAB2; font-weight: 600; }
+    .stTabs [aria-selected="true"] { color: #CCFF00 !important; border-bottom-color: #CCFF00 !important; }
 
-    /* Inputs y Selectbox en modo oscuro */
     .stTextInput input, .stSelectbox div[data-baseweb="select"] > div {
         background-color: #1A1D24 !important;
         color: #FFFFFF !important;
         border-color: #2A2E39 !important;
     }
-    .stTextInput input::placeholder {
-        color: #6C757D !important;
-    }
+    .stTextInput input::placeholder { color: #6C757D !important; }
     </style>
 """, unsafe_allow_html=True)
 
-# --- MÓDULO DE AUTENTICACIÓN / CANDADO DE SEGURIDAD ---
+# --- MÓDULO DE AUTENTICACIÓN ---
 def verificar_contraseña():
     if "autenticado" not in st.session_state:
         st.session_state["autenticado"] = False
@@ -221,8 +232,11 @@ def verificar_contraseña():
         with col_form:
             st.markdown("""
                 <div class="kinetik-hero">
-                    <h1>⚡ KINETIK <span>ACCESS</span></h1>
-                    <p>Catálogo Privado — Ropa Deportiva Hecho en México</p>
+                    <div class="kinetik-logo-k">K</div>
+                    <div class="kinetik-hero-content">
+                        <h1>KINETIK <span>ACCESS</span></h1>
+                        <p>Catálogo Privado — Ropa Deportiva Hecho en México</p>
+                    </div>
                 </div>
             """, unsafe_allow_html=True)
             pwd_input = st.text_input("Contraseña de Acceso:", type="password", key="pwd_acceso")
@@ -238,31 +252,29 @@ def verificar_contraseña():
         return False
     return True
 
-# Validar clave antes de ejecutar cualquier consulta o cargar la interfaz
 if not verificar_contraseña():
     st.stop()
 
-# --- INTERFAZ COMERCIAL DE LA TIENDA PÚBLICA (HERO BANNER) ---
+# --- HERO BANNER CON LA K NARANJA ---
 st.markdown("""
     <div class="kinetik-hero">
-        <h1>⚡ KINETIK <span>IMPULSA CADA MOVIMIENTO</span></h1>
-        <p>Colección Oficial — Ropa deportiva de alto rendimiento. ¡Ingeniería textil 100% Mexicana! 🇲🇽</p>
+        <div class="kinetik-logo-k">K</div>
+        <div class="kinetik-hero-content">
+            <h1>KINETIK <span>IMPULSA CADA MOVIMIENTO</span></h1>
+            <p>Colección Oficial — Ropa deportiva de alto rendimiento. ¡Ingeniería textil 100% Mexicana! 🇲🇽</p>
+        </div>
     </div>
 """, unsafe_allow_html=True)
 
 def construir_url_imagen(ruta_raw: str) -> str:
-    """Convierte una ruta local o limpia en una URL remota válida en Render."""
     if not ruta_raw or str(ruta_raw).strip().lower() in ["nan", "none", ""]:
         return PLACEHOLDER_OFICIAL
-    
     clean_path = str(ruta_raw).strip().replace("\\", "/")
     if clean_path.startswith("http"):
         return clean_path
-    
     return f"{URL_BASE_RENDER}/{clean_path.lstrip('/')}"
 
 def renderizar_imagen_catalogo(url_img: str, agotado: bool):
-    """Renderiza la imagen normal o en escala de grises con sello si el inventario es 0."""
     if agotado:
         st.markdown(f"""
             <div class="contenedor-imagen-tienda">
@@ -284,7 +296,6 @@ try:
         if productos:
             df = pd.DataFrame(productos)
             
-            # --- FILTROS RÁPIDOS EN TIENDA ---
             col_f1, col_f2 = st.columns([1, 2])
             with col_f1:
                 deptos = ["TODOS"] + sorted(list(df['departamento'].dropna().unique())) if 'departamento' in df.columns else ["TODOS"]
@@ -292,7 +303,6 @@ try:
             with col_f2:
                 buscar = st.text_input("🔍 Buscar prenda, color o código", placeholder="Ej: LEGGIN, TRIX, NEGRO...")
 
-            # Aplicar Filtros comerciales
             df_filtrado = df.copy()
             if sel_depto != "TODOS":
                 df_filtrado = df_filtrado[df_filtrado['departamento'] == sel_depto]
@@ -305,7 +315,6 @@ try:
             st.caption(f"⚡ Mostrando {len(df_filtrado)} prendas en catálogo")
             st.divider()
 
-            # --- ESCAPARATE DE PRODUCTOS EN CUADRÍCULA (3 COLUMNAS) ---
             cols = st.columns(3)
             
             for idx, row in df_filtrado.reset_index(drop=True).iterrows():
@@ -316,24 +325,17 @@ try:
                 color_p = str(row.get('color', 'N/A'))
                 historia = str(row.get('historia_ia', 'Calidad textil garantizada.'))
                 
-                # Validación de existencia en inventario
                 existencia_actual = int(row.get('existencia', 0)) if pd.notnull(row.get('existencia')) else 0
                 esta_agotado = existencia_actual <= 0
-                
-                # Obtenemos los likes directamente de la base de datos
                 num_likes = int(row.get('total_likes', 0)) if pd.notnull(row.get('total_likes')) else 0
                 
-                # Extracción robusta de imágenes
                 raw_imgs = row.get('imagenes', [])
                 lista_imagenes = []
-                
                 if isinstance(raw_imgs, str):
                     try:
                         parsed = ast.literal_eval(raw_imgs)
-                        if isinstance(parsed, list):
-                            lista_imagenes = parsed
-                        else:
-                            lista_imagenes = [raw_imgs]
+                        if isinstance(parsed, list): lista_imagenes = parsed
+                        else: lista_imagenes = [raw_imgs]
                     except Exception:
                         lista_imagenes = [raw_imgs] if raw_imgs else []
                 elif isinstance(raw_imgs, list):
@@ -349,7 +351,6 @@ try:
 
                 with cols[idx % 3]:
                     with st.container(border=True):
-                        # --- GALERÍA FOTOGRÁFICA ---
                         if lista_imagenes_limpia:
                             if len(lista_imagenes_limpia) > 1:
                                 nombres_pestanas = [f"Foto {i+1}" for i in range(len(lista_imagenes_limpia))]
@@ -378,14 +379,12 @@ try:
                         with st.expander("📖 Detalles y Tecnología Textil"):
                             st.write(historia)
                         
-                        # --- BOTÓN DE LIKE CONECTADO AL BACKEND ---
                         btn_like = st.button(f"❤️ Me Gusta ({num_likes})", key=f"like_{codigo_sku}_{idx}", use_container_width=True)
                         
                         if btn_like:
                             try:
                                 url_like = f"{URL_BASE_RENDER}/productos/{codigo_sku}/like"
                                 response_like = requests.post(url_like)
-                                
                                 if response_like.status_code == 200:
                                     st.toast("🔥 ¡Like registrado en KINETIK!")
                                     st.rerun()
@@ -394,13 +393,11 @@ try:
                             except Exception as err_like:
                                 st.error(f"Error de conexión al dar like: {err_like}")
 
-                        # --- ACCIÓN DE COMPRA / ESTADO DE STOCK ---
                         if esta_agotado:
                             st.warning("⚠️ Temporalmente agotado. Dale ❤️ Me Gusta para priorizar su reabastecimiento.")
                         else:
                             if num_likes > 0:
                                 st.caption(f"🔥 ¡Alta demanda! {num_likes} personas ya la tienen en la mira.")
-                            
                             mensaje_wa = f"¡Hola KINETIK! Me interesa la prenda SKU: {codigo_sku} ({desc_orig}) en color {color_p} con precio de ${precio_v:.2f} MXN. ¿Me apoyas con mi pedido?"
                             url_wa = f"https://wa.me/{NUMERO_VENTAS_WHATSAPP}?text={quote(mensaje_wa)}"
                             st.link_button("⚡ Pedir por WhatsApp", url_wa, use_container_width=True)
