@@ -52,14 +52,12 @@ class HistorialPrecioDB(Base):
     precio_venta_anterior = Column(Float)
     precio_venta_nuevo = Column(Float)
     fecha_cambio = Column(DateTime, server_default=func.datetime('now', 'localtime'))
-```[cite: 3]
 
----
 
 ### 2. Actualización en `main.py`[cite: 2]
-Incorporamos el esquema de validación `ProductoUpdateSchema` y el endpoint `PUT /productos/{codigo}` que actualiza los datos operativos/financieros y dispara el registro histórico de precios de forma automática.
+#Incorporamos el esquema de validación `ProductoUpdateSchema` y el endpoint `PUT /productos/{codigo}` que actualiza los datos operativos/financieros y dispara el registro histórico de precios de forma automática.
 
-```python
+
 from fastapi import FastAPI, Depends, HTTPException, Header, Body, UploadFile, File
 from sqlalchemy.orm import Session
 import models
@@ -355,14 +353,12 @@ def obtener_productos(db: Session = Depends(get_db)):
         return resultado
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al consultar la base de datos: {str(e)}")
-```[cite: 2]
 
----
 
 ### 3. Actualización en `app_frontend.py`[cite: 4]
-Añadimos la **Pestaña 5 ("✏️ Editar Precios e Inventario")** aplicando la **Opción 2**: buscas por SKU o descripción, se precargan los campos operativos y financieros que encerraste en tu imagen (costo, venta, mayoreo, existencias, límites e info)[cite: 1], y guardas los cambios de inmediato contra la API protegida por token.
+#Añadimos la **Pestaña 5 ("✏️ Editar Precios e Inventario")** aplicando la **Opción 2**: buscas por SKU o descripción, se precargan los campos operativos y financieros que encerraste en tu imagen (costo, venta, mayoreo, existencias, límites e info)[cite: 1], y guardas los cambios de inmediato contra la API protegida por token.
 
-```python
+
 import streamlit as st
 import requests
 import json
