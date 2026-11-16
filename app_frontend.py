@@ -194,11 +194,13 @@ with st.sidebar:
         st.session_state["autenticado"] = False
         st.rerun()
 
-tab1, tab2, tab3, tab4 = st.tabs([
+# <--- 5 PESTAÑAS: INCLUYENDO EL NUEVO MÓDULO DE EDICIÓN RÁPIDA (OPCIÓN 2) --->
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "🥇️ KINETIK - Quienes somos", 
     "📝 Formulario Manual", 
     "📊 Inventario e Impresión",
-    "🖼️ Galería y Fotos por SKU"
+    "🖼️ Galería y Fotos por SKU",
+    "✏️ Editar Precios e Inventario"
 ])
 
 with tab1:
@@ -532,3 +534,68 @@ with tab4:
                     st.warning(f"⚠️ No se encontró ninguna prenda registrada con el SKU '{sku_a_editar}'.")
         except Exception as e:
             st.error(f"Error al conectar con la API de productos: {e}")
+
+# ==============================================================================
+# ✏️ PESTAÑA 5: MÓDULO DE EDICIÓN RÁPIDA DE PRECIOS E INVENTARIO (OPCIÓN 2)
+# ==============================================================================
+with tab5:
+    st.subheader("✏️ Actualización Rápida de Precios, Costos y Existencias por SKU")
+    st.markdown("Busca el producto por su código SKU para actualizar sus valores financieros y de stock en tiempo real de forma limpia y segura[cite: 1].")
+    
+    sku_busqueda_edit = st.text_input("🔍 Ingresa el código SKU o escanea el código de barras:", placeholder="Ej. 3641741", key="sku_busqueda_actualizacion")
+    
+    if sku_busqueda_edit:
+        try:
+            resp_prod = requests.get(URL_FASTAPI_LISTAR)
+            if resp_prod.status_code == 200:
+                lista_prods = resp_prod.json()
+                item_encontrado = next((p for p in lista_prods if str(p["codigo"]).strip() == str(sku_busqueda_edit).strip()), None)
+                
+                if item_encontrado:
+                    st.success(f"🎯 Producto localizado: **[{item_encontrado.get('codigo')}] {item_encontrado.get('prenda')}** - {item_encontrado.get('color')}")
+                    
+                    # Formulario precargado con los datos actuales del producto (basado en el recuadro rojo de tu imagen)[cite: 1]
+                    with st.form("form_actualizacion_precios_stock"):
+                        st.markdown("#### 📦 Modificar Datos de Inventario y Precios")
+                        
+                        col_e1, col_e2 = st.columns(2)
+                        with col_e1:
+                            nuevo_desc = st.text_input("Descripción Original", value=item_encontrado.get('descripcion_original', ''))
+                            nuevo_p_costo = st.number_input("Precio Costo ($MXN)", min_value=0.0, step=1.0, value=float(item_encontrado.get('precio_costo', 0.0)))
+                            nuevo_p_venta = st.number_input("Precio Venta Público ($MXN)", min_value=0.0, step=1.0, value=float(item_encontrado.get('precio_venta', 0.0)))
+                            nuevo_p_mayoreo = st.number_input("Precio Mayoreo ($MXN)", min_value=0.0, step=1.0, value=float(item_encontrado.get('precio_mayoreo', 0.0)))
+                        with col_e2:
+                            nuevo_dep = st.text_input("Departamento / Sección", value=item_encontrado.get('departamento', 'GENERAL'))
+                            nueva_existencia = st.number_input("Existencia en Tienda", min_value=0, step=1, value=int(item_encontrado.get('existencia', 0)))
+                            nuevo_inv_min = st.number_input("Inventario Mínimo", min_value=0, step=1, value=int(item_encontrado.get('inventario_minimo', 0)))
+                            nuevo_inv_max = st.number_input("Inventario Máximo", min_value=0, step=1, value=int(item_encontrado.get('inventario_maximo', 0)))
+                        
+                        st.info("ℹ️ Nota: Los identificadores estructurales (SKU y Código EAN-13) están bloqueados para proteger la integridad histórica de tus reportes y análisis de ventas[cite: 1].")
+                        
+                        btn_guardar_cambios = st.form_submit_button("💾 Guardar Actualización de Precios y Stock", use_container_width=True)
+                        
+                        if btn_guardar_cambios:
+                            payload_actualizacion = {
+                                "descripcion_original": nuevo_desc,
+                                "precio_costo": float(nuevo_p_costo),
+                                "precio_venta": float(nuevo_p_venta),
+                                "precio_mayoreo": float(nuevo_p_mayoreo),
+                                "existencia": int(nueva_existencia),
+                                "inventario_minimo": int(nuevo_inv_min),
+                                "inventario_maximo": int(nuevo_inv_max),
+                                "departamento": nuevo_dep.upper()
+                            }
+                            
+                            url_put = f"{BASE_URL_RENDER}/productos/{sku_busqueda_edit}"
+                            r_put = requests.put(url_put, json=payload_actualizacion, headers=HEADERS)
+                            
+                            if r_put.status_code == 200:
+                                st.balloons()
+                                st.success(f"🎉 ¡Precios y stock del SKU [{sku_busqueda_edit}] actualizados correctamente en el sistema!")
+                                st.rerun()
+                            else:
+                                st.error(f"Error {r_put.status_code}: {r_put.text}")
+                else:
+                    st.warning(f"⚠️ No se encontró ningún producto con el SKU '{sku_busqueda_edit}'. Verifica el código.")
+        except Exception as err_act:
+            st.error(f"Error al conectar con la API de actualización: {err_act}")

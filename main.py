@@ -13,7 +13,7 @@ models.Base.metadata.create_all(bind=engine)
 app = FastAPI(
     title="Hecho en México API - E-commerce Engine",
     description="Backend optimizado para inventarios KINETIK con IA e integración de Supabase Storage",
-    version="3.3.0"
+    version="3.4.0"
 )
 
 API_SECRET_KEY = os.getenv("API_SECRET_KEY", "ulises_pro_2026")
@@ -56,7 +56,18 @@ class ProductoSchema(BaseModel):
     codigo_barras: Optional[str] = None
     columna: Optional[str] = None
     caja: Optional[str] = None
-    total_likes: Optional[int] = 0  # <--- ¡ NUEVO CAMPO AÑADIDO PARA LA ANALÍTICA DE LIKES !
+    total_likes: Optional[int] = 0  # <--- Campo para la analítica de likes
+
+# <--- ESQUEMA PAA ACTUALIZACIÓN PARCIAL DE PRENDAS (OPCIÓN 2) --->
+class ProductoUpdateSchema(BaseModel):
+    descripcion_original: Optional[str] = None
+    precio_costo: Optional[float] = None
+    precio_venta: Optional[float] = None
+    precio_mayoreo: Optional[float] = None
+    existencia: Optional[int] = None
+    inventario_minimo: Optional[int] = None
+    inventario_maximo: Optional[int] = None
+    departamento: Optional[str] = None
 
 @app.post("/subir-imagen-supabase/")
 async def subir_imagen_supabase(
@@ -152,7 +163,52 @@ def crear_producto(
         "total_likes": nuevo_producto.total_likes
     }
 
-# <--- ¡ NUEVO ENDPOINT PARA CONTABILIZAR Y DAR LIKE DESDE LA TIENDA ! --->
+# <--- NUEVO ENDPOINT PUT: ACTUALIZAR PRECIOS, INVENTARIO Y REGISTRAR HISTORIAL --->
+@app.put("/productos/{codigo}")
+def actualizar_producto(
+    codigo: str,
+    producto_update: ProductoUpdateSchema,
+    db: Session = Depends(get_db),
+    x_token: str = Header(None)
+):
+    if x_token != API_SECRET_KEY:
+        raise HTTPException(status_code=403, detail="Acceso denegado: Token inválido, compa.")
+    
+    producto = db.query(models.ProductoDB).filter(models.ProductoDB.codigo == codigo).first()
+    if not producto:
+        raise HTTPException(status_code=404, detail=f"El producto con código '{codigo}' no existe, compa.")
+    
+    pc_anterior = producto.precio_costo
+    pv_anterior = producto.precio_venta
+    
+    update_data = producto_update.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(producto, key, value)
+        
+    # Registrar en el historial si hubo cambios en costos o precios de venta (clave para análisis financiero)
+    if (producto_update.precio_costo is not None and producto_update.precio_costo != pc_anterior) or \
+       (producto_update.precio_venta is not None and producto_update.precio_venta != pv_anterior):
+        historial = models.HistorialPrecioDB(
+            codigo=codigo,
+            precio_costo_anterior=pc_anterior,
+            precio_costo_nuevo=producto.precio_costo,
+            precio_venta_anterior=pv_anterior,
+            precio_venta_nuevo=producto.precio_venta
+        )
+        db.add(historial)
+        
+    db.commit()
+    db.refresh(producto)
+    
+    return {
+        "mensaje": f"¡Producto con SKU {codigo} actualizado exitosamente!",
+        "codigo": producto.codigo,
+        "precio_venta": producto.precio_venta,
+        "precio_costo": producto.precio_costo,
+        "existencia": producto.existencia
+    }
+
+# <--- ENDPOINT PARA CONTABILIZAR Y DAR LIKE DESDE LA TIENDA --->
 @app.post("/productos/{codigo}/like")
 def dar_like_producto(codigo: str, db: Session = Depends(get_db)):
     producto = db.query(models.ProductoDB).filter(models.ProductoDB.codigo == codigo).first()
@@ -160,7 +216,6 @@ def dar_like_producto(codigo: str, db: Session = Depends(get_db)):
     if not producto:
         raise HTTPException(status_code=404, detail=f"El producto con código '{codigo}' no existe, compa.")
     
-    # Incrementamos el contador de likes de forma segura en la BD
     if producto.total_likes is None:
         producto.total_likes = 0
     producto.total_likes += 1
