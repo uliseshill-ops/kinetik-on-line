@@ -32,7 +32,8 @@ class ProductoDB(Base):
     caja = Column(String, nullable=True)
     
     historia_ia = Column(String)
-    created_at = Column(DateTime, server_default=func.datetime('now', 'localtime'))
+    #created_at = Column(DateTime, server_default=func.datetime('now', 'localtime'))
+    created_at = Column(DateTime, server_default=func.now())
 
 class ProductoImagenDB(Base):
     __tablename__ = "producto_imagenes"
@@ -51,7 +52,8 @@ class HistorialPrecioDB(Base):
     precio_costo_nuevo = Column(Float)
     precio_venta_anterior = Column(Float)
     precio_venta_nuevo = Column(Float)
-    fecha_cambio = Column(DateTime, server_default=func.datetime('now', 'localtime'))
+    #fecha_cambio = Column(DateTime, server_default=func.datetime('now', 'localtime'))
+    fecha_cambio = Column(DateTime, server_default=func.now())
 
 
 ### 2. Actualización en `main.py`[cite: 2]
