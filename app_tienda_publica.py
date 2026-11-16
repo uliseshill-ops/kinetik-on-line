@@ -34,6 +34,14 @@ st.markdown("""
         letter-spacing: 0.5px;
     }
 
+    /* --- CORRECCIÓN DE ETIQUETAS DE INPUTS (SELECTBOX Y TEXT_INPUT) --- */
+    /* Las ponemos en verde volt discreto, sin negritas, para perfecta visibilidad */
+    [data-testid="stWidgetLabel"] p, label, .stTextInput label, .stSelectbox label {
+        color: #B8FF33 !important;
+        font-weight: 400 !important;
+        font-size: 0.95rem !important;
+    }
+
     /* Banner Hero Superior */
     .kinetik-hero {
         background: linear-gradient(135deg, #161920 0%, #0F1115 100%);
@@ -196,6 +204,9 @@ st.markdown("""
         background-color: #1A1D24 !important;
         color: #FFFFFF !important;
         border-color: #2A2E39 !important;
+    }
+    .stTextInput input::placeholder {
+        color: #6C757D !important;
     }
     </style>
 """, unsafe_allow_html=True)
