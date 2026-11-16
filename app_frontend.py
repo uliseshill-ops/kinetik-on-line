@@ -47,10 +47,10 @@ st.markdown("""
     [data-testid="stImage"] img {
         width: 100% !important;
         height: auto !important;
-        max-height: 550px !important; /* <--- Un cuadro más holgado para que respire la imagen */
-        object-fit: contain !important; /* <--- Muestra toda la foto sin recortar ningún rincón */
+        max-height: 550px !important;
+        object-fit: contain !important;
         border-radius: 8px;
-        background-color: #f9f9f9; /* Fondo sutil elegante para fotos con proporciones distintas */
+        background-color: #f9f9f9;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -69,7 +69,6 @@ if not st.session_state["autenticado"]:
         st.title("🔒 KINETIK Admin Panel")
         st.subheader("Acceso Restringido - Control de Inventarios")
         
-        # Validación crítica por si la variable viene vacía
         if not admin_password:
             st.error("🚨 Error del Sistema: La variable de entorno 'ADMIN_PASSWORD' está vacía o no configurada en Render.")
             st.stop()
@@ -122,6 +121,9 @@ MAPEO_PROVEEDOR = {
 MAPEO_TALLA = {
     'XS': '1', 'S': '2', 'M': '3', 'G': '4', 'XG': '5', 'XXG': '6', 'UNITALLA': '7'
 }
+# Mapeo inverso para decodificar la talla desde el SKU (penúltimo carácter)
+CODIGO_A_TALLA = {v: k for k, v in MAPEO_TALLA.items()}
+
 MAPEO_COLOR = {
     'NEGRO': '1', 'BLANCO': '2', 'ROJO': '3', 'VERDE': '4', 'GRIS': '5',
     'NARANJA': '6', 'CAMUFLAJE': '7', 'ROSA': '8', 'CAFÉ': '9', 'CAFE': '9',
@@ -130,6 +132,16 @@ MAPEO_COLOR = {
     'PURPURA': 'I', 'PISTACHE': 'J', 'ROSA MEX': 'K', 'VARIOS': 'L',
     'ROSA NEON': 'M', 'VINO': 'N', 'OXFOR': 'O', 'VERDE FLUORESCENTE': 'P', 'ROSA PALIDO': 'Q'
 }
+
+def detectar_talla_producto(item_dict: dict) -> str:
+    """Obtiene la talla oficial desde la BD o la decodifica del penúltimo carácter del SKU."""
+    talla_bd = str(item_dict.get('talla', '')).strip().upper()
+    if talla_bd and talla_bd not in ['NAN', 'NONE', '']:
+        return talla_bd
+    sku = str(item_dict.get('codigo', '')).strip()
+    if len(sku) >= 7:
+        return CODIGO_A_TALLA.get(sku[-2], 'UNITALLA')
+    return 'UNITALLA'
 
 def generar_codigo_producto(genero, tipo_tela, prenda, corte, proveedor, talla, color) -> str:
     c_gen = MAPEO_GENERO.get(str(genero).strip().upper(), '0')
@@ -194,7 +206,6 @@ with st.sidebar:
         st.session_state["autenticado"] = False
         st.rerun()
 
-# <--- 5 PESTAÑAS: INCLUYENDO EL NUEVO MÓDULO DE EDICIÓN RÁPIDA (OPCIÓN 2) --->
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "🥇️ KINETIK - Quienes somos", 
     "📝 Formulario Manual", 
@@ -414,6 +425,7 @@ with tab3:
                     prenda_val = str(prod_row.get('prenda', ''))
                     desc_val = str(prod_row.get('descripcion_original', ''))
                     likes_val = int(prod_row.get('total_likes', 0))
+                    talla_val = detectar_talla_producto(prod_row.to_dict())
                     
                     bc_val = calcular_codigo_barras_pos(sku_elegido)
                     
@@ -429,7 +441,7 @@ with tab3:
                             use_container_width=True
                         )
                     with col_b_info:
-                        st.markdown(f"**Prenda:** {prenda_val}")
+                        st.markdown(f"**Prenda:** {prenda_val} | **Talla:** {talla_val}")
                         st.markdown(f"**Descripción:** {desc_val}")
                         st.markdown(f"**Precio Público:** ${p_venta_val:,.2f} MXN")
                         st.markdown(f"**❤️ Total de Likes (Engagement):** `{likes_val}` interacciones")
@@ -454,7 +466,8 @@ with tab4:
                 prod_encontrado = next((p for p in prods if str(p["codigo"]).strip() == str(sku_a_editar).strip()), None)
                 
                 if prod_encontrado:
-                    st.success(f"✅ Prenda Encontrada: **{prod_encontrado.get('prenda')}** - {prod_encontrado.get('descripcion_original')}")
+                    talla_gal = detectar_talla_producto(prod_encontrado)
+                    st.success(f"✅ Prenda Encontrada: **{prod_encontrado.get('prenda')}** (Talla: **{talla_gal}**) - {prod_encontrado.get('descripcion_original')}")
                     
                     st.info(f"❤️ Este producto cuenta con **{prod_encontrado.get('total_likes', 0)} likes** registrados en la tienda.")
                     
@@ -536,11 +549,11 @@ with tab4:
             st.error(f"Error al conectar con la API de productos: {e}")
 
 # ==============================================================================
-# ✏️ PESTAÑA 5: MÓDULO DE EDICIÓN RÁPIDA DE PRECIOS E INVENTARIO (OPCIÓN 2)
+# ✏️ PESTAÑA 5: MÓDULO DE EDICIÓN RÁPIDA DE PRECIOS E INVENTARIO
 # ==============================================================================
 with tab5:
     st.subheader("✏️ Actualización Rápida de Precios, Costos y Existencias por SKU")
-    st.markdown("Busca el producto por su código SKU para actualizar sus valores financieros y de stock en tiempo real de forma limpia y segura[cite: 1].")
+    st.markdown("Busca el producto por su código SKU para actualizar sus valores financieros y de stock en tiempo real de forma limpia y segura.")
     
     sku_busqueda_edit = st.text_input("🔍 Ingresa el código SKU o escanea el código de barras:", placeholder="Ej. 3641741", key="sku_busqueda_actualizacion")
     
@@ -552,9 +565,12 @@ with tab5:
                 item_encontrado = next((p for p in lista_prods if str(p["codigo"]).strip() == str(sku_busqueda_edit).strip()), None)
                 
                 if item_encontrado:
-                    st.success(f"🎯 Producto localizado: **[{item_encontrado.get('codigo')}] {item_encontrado.get('prenda')}** - {item_encontrado.get('color')}")
+                    talla_detectada = detectar_talla_producto(item_encontrado)
+                    st.success(
+                        f"🎯 Producto localizado: **[{item_encontrado.get('codigo')}] {item_encontrado.get('prenda')}** "
+                        f"- {item_encontrado.get('color')} | **Talla: {talla_detectada}**"
+                    )
                     
-                    # Formulario precargado con los datos actuales del producto (basado en el recuadro rojo de tu imagen)[cite: 1]
                     with st.form("form_actualizacion_precios_stock"):
                         st.markdown("#### 📦 Modificar Datos de Inventario y Precios")
                         
@@ -565,12 +581,13 @@ with tab5:
                             nuevo_p_venta = st.number_input("Precio Venta Público ($MXN)", min_value=0.0, step=1.0, value=float(item_encontrado.get('precio_venta', 0.0)))
                             nuevo_p_mayoreo = st.number_input("Precio Mayoreo ($MXN)", min_value=0.0, step=1.0, value=float(item_encontrado.get('precio_mayoreo', 0.0)))
                         with col_e2:
+                            st.text_input("📏 Talla Asociada al SKU", value=talla_detectada, disabled=True)
                             nuevo_dep = st.text_input("Departamento / Sección", value=item_encontrado.get('departamento', 'GENERAL'))
                             nueva_existencia = st.number_input("Existencia en Tienda", min_value=0, step=1, value=int(item_encontrado.get('existencia', 0)))
                             nuevo_inv_min = st.number_input("Inventario Mínimo", min_value=0, step=1, value=int(item_encontrado.get('inventario_minimo', 0)))
                             nuevo_inv_max = st.number_input("Inventario Máximo", min_value=0, step=1, value=int(item_encontrado.get('inventario_maximo', 0)))
                         
-                        st.info("ℹ️ Nota: Los identificadores estructurales (SKU y Código EAN-13) están bloqueados para proteger la integridad histórica de tus reportes y análisis de ventas[cite: 1].")
+                        st.info("ℹ️ Nota: Los identificadores estructurales (SKU, Talla y Código EAN-13) están bloqueados para proteger la integridad histórica de tus reportes y análisis de ventas.")
                         
                         btn_guardar_cambios = st.form_submit_button("💾 Guardar Actualización de Precios y Stock", use_container_width=True)
                         
@@ -591,7 +608,7 @@ with tab5:
                             
                             if r_put.status_code == 200:
                                 st.balloons()
-                                st.success(f"🎉 ¡Precios y stock del SKU [{sku_busqueda_edit}] actualizados correctamente en el sistema!")
+                                st.success(f"🎉 ¡Precios y stock del SKU [{sku_busqueda_edit}] (Talla {talla_detectada}) actualizados correctamente en el sistema!")
                                 st.rerun()
                             else:
                                 st.error(f"Error {r_put.status_code}: {r_put.text}")
