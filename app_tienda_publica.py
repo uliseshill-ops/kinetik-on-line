@@ -229,9 +229,45 @@ st.markdown("""
     }
 
     /* Tabs y Selectores */
-    .stTabs [data-baseweb="tab-list"] { gap: 8px; }
-    .stTabs [data-baseweb="tab"] { color: #A0AAB2; font-weight: 600; }
-    .stTabs [aria-selected="true"] { color: #CCFF00 !important; border-bottom-color: #CCFF00 !important; }
+    /* Tabs y Selectores de Fotos (ALTO CONTRASTE) */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 6px;
+        background-color: #12141A;
+        padding: 6px;
+        border-radius: 8px;
+        border: 1px solid #2A2E39;
+    }
+    .stTabs [data-baseweb="tab"] {
+        background-color: #1E222B !important;
+        border-radius: 6px !important;
+        padding: 4px 12px !important;
+        border: 1px solid #323744 !important;
+        transition: all 0.2s ease;
+    }
+    /* Fuerza el color blanco legible en el texto interno de las pestañas inactivas */
+    .stTabs [data-baseweb="tab"] p,
+    .stTabs [data-baseweb="tab"] div,
+    .stTabs [data-baseweb="tab"] span {
+        color: #E2E8F0 !important;
+        font-weight: 600 !important;
+        font-size: 0.85rem !important;
+    }
+    .stTabs [data-baseweb="tab"]:hover {
+        border-color: #CCFF00 !important;
+        background-color: #262B36 !important;
+    }
+    /* Pestaña de la foto activa en Verde Volt KINETIK */
+    .stTabs [aria-selected="true"] {
+        background-color: #252B1E !important;
+        border-color: #CCFF00 !important;
+        border-bottom: 2px solid #CCFF00 !important;
+    }
+    .stTabs [aria-selected="true"] p,
+    .stTabs [aria-selected="true"] div,
+    .stTabs [aria-selected="true"] span {
+        color: #CCFF00 !important;
+        font-weight: 800 !important;
+    }
 
     .stTextInput input, .stSelectbox div[data-baseweb="select"] > div {
         background-color: #1A1D24 !important;
