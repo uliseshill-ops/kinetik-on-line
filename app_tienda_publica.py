@@ -228,10 +228,43 @@ st.markdown("""
         box-shadow: 0 6px 20px rgba(204, 255, 0, 0.5) !important;
     }
 
-    /* Tabs y Selectores */
-    .stTabs [data-baseweb="tab-list"] { gap: 8px; }
-    .stTabs [data-baseweb="tab"] { color: #A0AAB2; font-weight: 600; }
-    .stTabs [aria-selected="true"] { color: #CCFF00 !important; border-bottom-color: #CCFF00 !important; }
+    /* Tabs y Selectores de Fotos (ALTO CONTRASTE) */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 6px;
+        background-color: #12141A;
+        padding: 6px;
+        border-radius: 8px;
+        border: 1px solid #2A2E39;
+    }
+    .stTabs [data-baseweb="tab"] {
+        background-color: #1E222B !important;
+        border-radius: 6px !important;
+        padding: 4px 12px !important;
+        border: 1px solid #323744 !important;
+        transition: all 0.2s ease;
+    }
+    .stTabs [data-baseweb="tab"] p,
+    .stTabs [data-baseweb="tab"] div,
+    .stTabs [data-baseweb="tab"] span {
+        color: #E2E8F0 !important;
+        font-weight: 600 !important;
+        font-size: 0.85rem !important;
+    }
+    .stTabs [data-baseweb="tab"]:hover {
+        border-color: #CCFF00 !important;
+        background-color: #262B36 !important;
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: #252B1E !important;
+        border-color: #CCFF00 !important;
+        border-bottom: 2px solid #CCFF00 !important;
+    }
+    .stTabs [aria-selected="true"] p,
+    .stTabs [aria-selected="true"] div,
+    .stTabs [aria-selected="true"] span {
+        color: #CCFF00 !important;
+        font-weight: 800 !important;
+    }
 
     .stTextInput input, .stSelectbox div[data-baseweb="select"] > div {
         background-color: #1A1D24 !important;
@@ -246,6 +279,61 @@ st.markdown("""
 CODIGO_A_TALLA = {
     '1': 'XS', '2': 'S', '3': 'M', '4': 'G', '5': 'XG', '6': 'XXG', '7': 'UNITALLA'
 }
+
+# --- PALETA DE COLORES OFICIAL KINETIK (MAPEO NOMBRE -> HEX / CSS) ---
+PALETA_COLORES_HEX = {
+    'NEGRO': '#111111',
+    'BLANCO': '#FFFFFF',
+    'ROJO': '#E53935',
+    'VERDE': '#2E7D32',
+    'GRIS': '#757575',
+    'NARANJA': '#FF5722',
+    'CAMUFLAJE': 'linear-gradient(135deg, #4B5320 33%, #78866B 66%, #3B3C36 100%)',
+    'ROSA': '#F48FB1',
+    'CAFÉ': '#5D4037',
+    'CAFE': '#5D4037',
+    'AMARILLO': '#FDD835',
+    'BEIGE': '#D7CCC8',
+    'LILA': '#BA68C8',
+    'AZUL CLARO': '#4FC3F7',
+    'AZUL OSCURO': '#1A237E',
+    'AZUL CIELO': '#81D4FA',
+    'AZUL REY': '#1565C0',
+    'MARRON': '#4E342E',
+    'PURPURA': '#6A1B9A',
+    'PISTACHE': '#AED581',
+    'ROSA MEX': '#E91E63',
+    'VARIOS': 'conic-gradient(#E53935, #FDD835, #43A047, #1E88E5, #E53935)',
+    'ROSA NEON': '#FF1493',
+    'VINO': '#722F37',
+    'OXFOR': '#37474F',
+    'VERDE FLUORESCENTE': '#CCFF00',
+    'ROSA PALIDO': '#F8BBD0'
+}
+
+def renderizar_paleta_colores_html(colores_disponibles: list, color_activo: str) -> str:
+    """Genera los círculos visuales (swatches) de colores disponibles en inventario para esa prenda."""
+    html_swatches = '<div style="display:flex; align-items:center; gap:8px; margin: 8px 0 10px 0; flex-wrap:wrap;">'
+    html_swatches += '<span style="color:#A0AAB2; font-size:0.85rem; margin-right:2px;">Colores en stock:</span>'
+    
+    for col in colores_disponibles:
+        col_clean = str(col).strip().upper()
+        fondo = PALETA_COLORES_HEX.get(col_clean, '#888888')
+        es_activo = (col_clean == str(color_activo).strip().upper())
+        
+        borde = '2.5px solid #CCFF00' if es_activo else '1.5px solid #4A505E'
+        sombra = '0 0 8px rgba(204, 255, 0, 0.6)' if es_activo else 'none'
+        escala = 'transform: scale(1.15);' if es_activo else ''
+        
+        html_swatches += (
+            f'<span title="{col_clean}" style="'
+            f'display:inline-block; width:20px; height:20px; border-radius:50%; '
+            f'background:{fondo}; border:{borde}; box-shadow:{sombra}; {escala} cursor:help;">'
+            f'</span>'
+        )
+    
+    html_swatches += '</div>'
+    return html_swatches
 
 def detectar_talla_fila(row) -> str:
     """Obtiene la talla oficial desde la columna 'talla' o la deduce del penúltimo dígito del SKU."""
@@ -412,7 +500,7 @@ try:
                             prenda_nombre = str(row.get('prenda', 'PRENDA')).upper()
                             desc_orig = str(row.get('descripcion_original', 'Prenda Hecho en México'))
                             precio_v = float(row.get('precio_venta', 0.0))
-                            color_p = str(row.get('color', 'N/A'))
+                            color_p = str(row.get('color', 'N/A')).strip().upper()
                             historia = str(row.get('historia_ia', 'Calidad textil garantizada.'))
                             
                             existencia_actual = int(row.get('existencia', 0)) if pd.notnull(row.get('existencia')) else 0
@@ -444,16 +532,30 @@ try:
                             else:
                                 renderizar_imagen_catalogo(PLACEHOLDER_OFICIAL, esta_agotado)
                             
+                            # --- MUESTRAS DE COLOR OBTENIDAS DEL INVENTARIO PARA ESTE MODELO ---
+                            colores_en_inventario = sorted(
+                                df[
+                                    (df['prenda'].astype(str).str.strip().str.upper() == prenda_nombre) &
+                                    (df['precio_venta'] == precio_v) &
+                                    (df['existencia'].fillna(0) > 0)
+                                ]['color'].dropna().astype(str).str.strip().str.upper().unique().tolist()
+                            )
+                            if color_p not in colores_en_inventario and color_p != 'N/A':
+                                colores_en_inventario.append(color_p)
+                                colores_en_inventario.sort()
+
                             if esta_agotado:
                                 st.subheader(f"{prenda_nombre} — Talla {talla_elegida} (AGOTADO)")
                                 st.markdown(f"<span style='color:#A0AAB2;'>{desc_orig}</span>", unsafe_allow_html=True)
                                 st.markdown(f"<span style='color:#A0AAB2;'>Color: **{color_p}** | Talla: **{talla_elegida}** | SKU:</span> <span class='badge-sku'>{codigo_sku}</span>", unsafe_allow_html=True)
+                                st.markdown(renderizar_paleta_colores_html(colores_en_inventario, color_p), unsafe_allow_html=True)
                                 st.markdown(f"<p class='card-precio-agotado'>${precio_v:,.2f} MXN</p>", unsafe_allow_html=True)
                             else:
                                 st.subheader(f"{prenda_nombre}")
                                 st.markdown(f"<span style='color:#D0D7DE;'>{desc_orig}</span>", unsafe_allow_html=True)
                                 st.markdown(f"<span style='color:#A0AAB2;'>Color: **{color_p}** | Talla: **{talla_elegida}** | SKU:</span> <span class='badge-sku'>{codigo_sku}</span>", unsafe_allow_html=True)
                                 st.caption(f"🟢 Stock en talla {talla_elegida}: **{existencia_actual}** pzas")
+                                st.markdown(renderizar_paleta_colores_html(colores_en_inventario, color_p), unsafe_allow_html=True)
                                 st.markdown(f"<p class='card-precio'>${precio_v:,.2f} MXN</p>", unsafe_allow_html=True)
                             
                             with st.expander("📖 Detalles y Tecnología Textil"):
